@@ -5,7 +5,10 @@ let playerCubiix = {
 	facingRight: false,
 	facingUp: false,
 	walking: false,
-	name: "unnamed"
+	name: "unnamed",
+	id: "",
+	nextInStack: null,
+	stackedOn: null
 }
 let cubiixList = [playerCubiix];
 
@@ -41,8 +44,16 @@ function renderFrame(time) {
 	cubiixList.sort(function(a, b) {
 		return a.posY - b.posY;
 	}).forEach(cubiix => {
-		ctx.drawImage(sprites.cubiix, cubiix.walking? Math.floor((time / 200) % 4) * 32 : 0, 0 + cubiix.facingUp * 32 + cubiix.facingRight * 64, 32, 32, Math.floor(cubiix.posX) - 16, Math.floor(cubiix.posY) - 32, 32, 32);
+		if (cubiix.stackedOn) return;
+		drawCubiix(cubiix, Math.floor(cubiix.posX), Math.floor(cubiix.posY), time);
 	});
+}
+
+function drawCubiix(cubiix, x, y, time) {
+	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 200) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 200) % 2)? 2 : 0) : 0), 32, 32);
+	if (cubiix.nextInStack) {
+		drawCubiix(cubiix.nextInStack, x, y - 19, time);
+	}
 }
 
 let lastTime = 0;
@@ -52,6 +63,7 @@ function update(time) {
 	lastTime = time;
 	
 	//controls for walking
+	let wasWalking = playerCubiix.walking;
 	playerCubiix.walking = false;
 	let xMove = 0;
 	let yMove = 0;
@@ -79,6 +91,10 @@ function update(time) {
 		walkAngle = Math.atan2(yMove, xMove);
 		playerCubiix.posX += Math.cos(walkAngle) * walkSpeed * delta;
 		playerCubiix.posY += Math.sin(walkAngle) * walkSpeed * delta;
+		
+		socket.send("[p]" + playerCubiix.posX + "|" + playerCubiix.posY);
+	} else if (wasWalking) {
+		socket.send("[stopWalk]");
 	}
 	
 	//render the frame
@@ -125,6 +141,9 @@ document.addEventListener("keyup", function(e) {
 		case "ArrowDown":
 			downDown = false;
 			break;
+		case " ":
+			socket.send("[stack]");
+			break;
 	}
 });
 
@@ -140,7 +159,6 @@ function resizeGame() {
 		currentGameScale = newScale;
 		mainCanvas.style.width = (mainCanvas.width * newScale) + "px";
 		mainCanvas.style.height = (mainCanvas.height * newScale) + "px";
-		console.log(newScale);
 	}
 }
 window.addEventListener("resize", resizeGame);
