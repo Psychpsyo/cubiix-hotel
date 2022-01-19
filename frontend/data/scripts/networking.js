@@ -43,7 +43,7 @@ function receiveMessage(message) {
 				id: args[3],
 				nextInStack: null,
 				stackedOn: args[4] == ""? null : args[4]
-			})
+			});
 			break;
 		case "allCubiixSent":
 			//resolve all the stacks from cubiix ids to actual references to cubiix.
@@ -58,15 +58,25 @@ function receiveMessage(message) {
 			cubiixList.splice(cubiixList.indexOf(cubiixById(args[0])), 1);
 			break;
 		case "yourId":
-			playerCubiix.id = args[0];
+			playerCubiix = cubiixById(args[0]);
 			break;
 	}
 }
 
-socket = new WebSocket("ws://93.213.160.17:15882");
+function connectToServer(address) {
+	if (socket) {
+		socket.close();
+	}
+	socket = new WebSocket("ws://" + address);
+	socket.addEventListener("message", receiveMessage);
+	socket.addEventListener("open", function (event) {
+		socket.send("[init]" + name);
+	});
+}
 
-socket.addEventListener("open", function (event) {
-	//socket.send("[hi]" + name); TODO: Send name and stuff
-});
-
-socket.addEventListener("message", receiveMessage);
+connectButton.addEventListener("click", function() {
+	name = usernameInput.value;
+	connectToServer(addressInput.value);
+	initialScreen.style.display = "none";
+	mainCanvas.style.display = "block";
+})

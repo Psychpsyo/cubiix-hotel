@@ -11,74 +11,88 @@ function sendToAll(message) {
 }
 
 wss.on("connection", function connection(ws) {
-	let thisCubiix = {
-		posX: 50,
-		posY: 50,
-		walking: false,
-		socket: ws,
-		id: lastId,
-		nextInStack: null,
-		stackedOn: null
-	}
-	lastId++;
-	
-	console.log("Cubiix connected. Assigning id " + thisCubiix.id + ".");
-	
-	//inform current cubiix about their id
-	ws.send("[yourId]" + thisCubiix.id);
-	
-	//send all cubiix to the current one and then tell it that all of them came through
-	cubiixList.forEach(function(cubiix) {
-		ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : ""));
-	});
-	ws.send("[allCubiixSent]");
-	
-	//send the new cubiix to all other ones.
-	sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "|");
-	
-	//add current cubiix to the server-side list
-	cubiixList.push(thisCubiix);
-	
-	ws.on("message", function(data) {
-		data = data.toString();
-		let msgType = data.substring(1, data.indexOf("]"));
-		let args = data.substring(data.indexOf("]") + 1).split("|");
+	//single use event listener to catch the init message from the client.
+	ws.addEventListener("message", function(message) {
+		let msgType = message.data.substring(1, message.data.indexOf("]"));
+		let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 		
-		switch(msgType) {
-		case "p":
-			//TODO: validate movement distance
-			thisCubiix.posX = parseFloat(args[0]);
-			thisCubiix.posY = parseFloat(args[1]);
-			sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY);
-			sendToAll("[walk]" + thisCubiix.id + "|true");
-			break;
-		case "stopWalk":
-			thisCubiix.walking = false;
-			sendToAll("[walk]" + thisCubiix.id + "|false");
-			break;
-		case "stack":
-			if (thisCubiix.stackedOn) {
+		if(msgType == "init") {
+			let thisCubiix = {
+				posX: 50,
+				posY: 50,
+				walking: false,
+				socket: ws,
+				id: lastId,
+				nextInStack: null,
+				stackedOn: null,
+				name: args[0]
+			};
+			lastId++;
+			
+			console.log("Cubiix connected. Assigning id " + thisCubiix.id + ".");
+			
+			
+			//send the new cubiix to all other ones.
+			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "|");
+			
+			//add new cubiix to the server-side list
+			cubiixList.push(thisCubiix);
+			
+			//send all cubiix to the new one and then tell it that all of them came through
+			cubiixList.forEach(function(cubiix) {
+				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : ""));
+			});
+			ws.send("[allCubiixSent]");
+			
+			//inform new cubiix about their id
+			ws.send("[yourId]" + thisCubiix.id);
+			
+			ws.addEventListener("message", function(message) {
+				let msgType = message.data.substring(1, message.data.indexOf("]"));
+				let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
+				
+				switch(msgType) {
+				case "p":
+					//TODO: validate movement distance
+					thisCubiix.posX = parseFloat(args[0]);
+					thisCubiix.posY = parseFloat(args[1]);
+					sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY);
+					sendToAll("[walk]" + thisCubiix.id + "|true");
+					break;
+				case "stopWalk":
+					thisCubiix.walking = false;
+					sendToAll("[walk]" + thisCubiix.id + "|false");
+					break;
+				case "stack":
+					if (thisCubiix.stackedOn) {
+						unstackCubiix(thisCubiix);
+						break;
+					}
+					let other = closestCubiix(thisCubiix);
+					if (other && cubiixDist(thisCubiix, other) < 32) {
+						other = topCubiixInStack(other);
+						thisCubiix.stackedOn = other;
+						other.nextInStack = thisCubiix;
+						sendToAll("[stack]" + thisCubiix.id + "|" + other.id);
+					}
+					break;
+				case "init":
+					
+					break;
+				}
+			});
+			
+			ws.addEventListener("close", function() {
+				//unstack the cubiix from its current stack, then remove it from the world
 				unstackCubiix(thisCubiix);
-				break;
-			}
-			let other = closestCubiix(thisCubiix);
-			if (other && cubiixDist(thisCubiix, other) < 32) {
-				other = topCubiixInStack(other);
-				thisCubiix.stackedOn = other;
-				other.nextInStack = thisCubiix;
-				sendToAll("[stack]" + thisCubiix.id + "|" + other.id);
-			}
-			break;
+				cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
+				sendToAll("[disconnected]" + thisCubiix.id);
+				console.log("Cubiix with id " + thisCubiix.id + " disconnected.");
+			});
+		} else {
+			ws.close();
 		}
-	});
-	
-	ws.on("close", function() {
-		//unstack the cubiix from its current stack, then remove it from the world
-		unstackCubiix(thisCubiix);
-		cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
-		sendToAll("[disconnected]" + thisCubiix.id);
-		console.log("Cubiix with id " + thisCubiix.id + " disconnected.");
-	});
+	}, {once: true});
 });
 
 //utility functions

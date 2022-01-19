@@ -1,40 +1,30 @@
-let walkSpeed = 96;
-let playerCubiix = {
-	posX: 50,
-	posY: 50,
-	facingRight: false,
-	facingUp: false,
-	walking: false,
-	name: "unnamed",
-	id: "",
-	nextInStack: null,
-	stackedOn: null
-}
-let cubiixList = [playerCubiix];
+var walkSpeed = 96;
+var playerCubiix = {}
+var cubiixList = [];
+var name = "";
+var socket = null;
+var currentGameScale = 1;
+
+var leftDown = false;
+var rightDown = false;
+var upDown = false;
+var downDown = false;
 
 //load general images
-let spritesLoaded = 0;
 var sprites = {
 	cubiix: new Image()
 }
-
-for (const sprite in sprites) {
-	sprites[sprite].addEventListener("load", initialSpriteLoaded, {once: true});
-}
-
-sprites.cubiix.src = "cubiix.png";
+sprites.cubiix.src = "data/cubiix.png";
 
 //get reference to the canvas
 var ctx = mainCanvas.getContext("2d");
 
-function initialSpriteLoaded() {
-	spritesLoaded++;
-	if (spritesLoaded < Object.keys(sprites).length) return;
-	
-	//first update to start the game
-	resizeGame();
+function startGame() {
 	requestAnimationFrame(update);
 }
+
+resizeGame();
+startGame();
 
 function renderFrame(time) {
 	//draw background
@@ -107,10 +97,6 @@ function update(time) {
 
 
 //controls
-var leftDown = false;
-var rightDown = false;
-var upDown = false;
-var downDown = false;
 document.addEventListener("keydown", function(e) {
 	switch(e.key) {
 		case "ArrowLeft":
@@ -147,10 +133,7 @@ document.addEventListener("keyup", function(e) {
 	}
 });
 
-
-
 //resizing the canvas
-let currentGameScale = 1;
 function resizeGame() {
 	let xMax = Math.floor(window.innerWidth / mainCanvas.width);
 	let yMax = Math.floor(window.innerHeight / mainCanvas.height);
