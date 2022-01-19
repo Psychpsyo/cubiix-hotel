@@ -28,6 +28,7 @@ startGame();
 
 function renderFrame(time) {
 	//draw background
+	ctx.fillStyle = "black";
 	ctx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 	
 	//render cubiix
@@ -43,6 +44,18 @@ function drawCubiix(cubiix, x, y, time) {
 	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 200) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 200) % 2)? 2 : 0) : 0), 32, 32);
 	if (cubiix.nextInStack) {
 		drawCubiix(cubiix.nextInStack, x, y - 19, time);
+	} else {
+		//draw nametags once reaching the top of the stack
+		ctx.fillStyle = "white";
+		ctx.textAlign = "center";
+		
+		let currentY = 32;
+		let currentCubiix = bottomCubiixInStack(cubiix);
+		while(currentCubiix) {
+			ctx.fillText(currentCubiix.name, x, y - currentY);
+			currentY += 10;
+			currentCubiix = currentCubiix.nextInStack;
+		}
 	}
 }
 

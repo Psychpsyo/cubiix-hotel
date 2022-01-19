@@ -39,10 +39,10 @@ function receiveMessage(message) {
 				facingRight: false,
 				facingUp: false,
 				walking: args[2] == "true",
-				name: "unnamed",
 				id: args[3],
 				nextInStack: null,
-				stackedOn: args[4] == ""? null : args[4]
+				stackedOn: args[4] == ""? null : args[4],
+				name: args[5]
 			});
 			break;
 		case "allCubiixSent":

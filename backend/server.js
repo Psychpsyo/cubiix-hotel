@@ -33,14 +33,14 @@ wss.on("connection", function connection(ws) {
 			
 			
 			//send the new cubiix to all other ones.
-			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "|");
+			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.name);
 			
 			//add new cubiix to the server-side list
 			cubiixList.push(thisCubiix);
 			
 			//send all cubiix to the new one and then tell it that all of them came through
 			cubiixList.forEach(function(cubiix) {
-				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : ""));
+				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : "") + "|" + cubiix.name);
 			});
 			ws.send("[allCubiixSent]");
 			
