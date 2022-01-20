@@ -28,3 +28,11 @@ function unstackCubiix(cubiix) {
 		unstackCubiix(cubiix.nextInStack);
 	}
 }
+
+function setCubiixPos(cubiix, x, y) {
+	cubiix.posX = x;
+	cubiix.posY = y;
+	if (cubiix.nextInStack) {
+		setCubiixPos(cubiix.nextInStack, x, y);
+	}
+}

@@ -72,10 +72,12 @@ wss.on("connection", function connection(ws) {
 				switch(msgType) {
 				case "p":
 					//TODO: validate movement distance
-					thisCubiix.posX = parseFloat(args[0]);
-					thisCubiix.posY = parseFloat(args[1]);
-					sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
-					sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
+					if (!thisCubiix.stackedOn) {
+						thisCubiix.posX = parseFloat(args[0]);
+						thisCubiix.posY = parseFloat(args[1]);
+						sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
+						sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
+					}
 					break;
 				case "stopWalk":
 					thisCubiix.walking = false;

@@ -8,8 +8,7 @@ function receiveMessage(message) {
 			let cubiix = cubiixById(args[0]);
 			let oldX = cubiix.posX;
 			let oldY = cubiix.posY;
-			cubiix.posX = parseFloat(args[1]);
-			cubiix.posY = parseFloat(args[2]);
+			setCubiixPos(cubiix, parseFloat(args[1]), parseFloat(args[2]));
 			//correct rotation of the cubiix
 			if (cubiix.posX > oldX) {
 				cubiix.facingRight = true;

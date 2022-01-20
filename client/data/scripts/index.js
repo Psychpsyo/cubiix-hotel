@@ -65,7 +65,7 @@ function renderFrame(time) {
 }
 
 function drawCubiix(cubiix, x, y, time) {
-	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 150) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 200) % 2)? 2 : 0) : 0), 32, 32);
+	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 150) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 150) % 2)? 2 : 0) : 0), 32, 32);
 	if (cubiix.nextInStack) {
 		drawCubiix(cubiix.nextInStack, x, y - 19, time);
 	} else {
@@ -81,7 +81,8 @@ function drawCubiix(cubiix, x, y, time) {
 	}
 }
 
-let lastTime = 0;
+var lastTime = 0;
+var delta = 0;
 function update(time) {
 	//skip to the next frame instantly when not connected to a server
 	if (!connected) {
@@ -94,6 +95,31 @@ function update(time) {
 	lastTime = time;
 	
 	//controls for walking
+	if (!playerCubiix.stackedOn) {
+		doWalking();
+	}
+	
+	//scroll along the X and why when too close to the screen border
+	if (playerCubiix.posX > scrollX + 300) {
+		scrollX = playerCubiix.posX - 300;
+	} else if (playerCubiix.posX < scrollX + 100) {
+		scrollX = playerCubiix.posX - 100;
+	}
+	
+	if (playerCubiix.posY > scrollY + 220) {
+		scrollY = playerCubiix.posY - 220;
+	} else if (playerCubiix.posY < scrollY + 100) {
+		scrollY = playerCubiix.posY - 100;
+	}
+	
+	//render the frame
+	renderFrame(time);
+	
+	//next frame
+	requestAnimationFrame(update);
+}
+
+function doWalking() {
 	if (mouseHolding) {
 		targetX = mouseX + scrollX;
 		targetY = mouseY + scrollY;
@@ -137,38 +163,18 @@ function update(time) {
 		} else {
 			walkAngle = Math.atan2(yMove, xMove);
 		}
-		playerCubiix.posX += Math.cos(walkAngle) * walkSpeed * delta;
-		playerCubiix.posY += Math.sin(walkAngle) * walkSpeed * delta;
+		
+		setCubiixPos(playerCubiix, playerCubiix.posX + Math.cos(walkAngle) * walkSpeed * delta, playerCubiix.posY + Math.sin(walkAngle) * walkSpeed * delta);
 		
 		socket.send("[p]" + playerCubiix.posX + "|" + playerCubiix.posY);
 		
 		if (targeting && Math.abs(targetX - playerCubiix.posX) < 1 && Math.abs(targetY - playerCubiix.posY) < 1) {
 			targeting = false;
 		}
-		
-		//scroll along the X and why when too close to the screen border
-		if (playerCubiix.posX > scrollX + 300) {
-			scrollX = playerCubiix.posX - 300;
-		} else if (playerCubiix.posX < scrollX + 100) {
-			scrollX = playerCubiix.posX - 100;
-		}
-		
-		if (playerCubiix.posY > scrollY + 220) {
-			scrollY = playerCubiix.posY - 220;
-		} else if (playerCubiix.posY < scrollY + 100) {
-			scrollY = playerCubiix.posY - 100;
-		}
 	} else if (wasWalking) {
 		socket.send("[stopWalk]");
 	}
-	
-	//render the frame
-	renderFrame(time);
-	
-	//next frame
-	requestAnimationFrame(update);
 }
-
 
 
 //controls
