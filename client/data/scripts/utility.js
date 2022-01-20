@@ -29,10 +29,16 @@ function unstackCubiix(cubiix) {
 	}
 }
 
+//sets a cubiix's position and the position of all other cubiix stacked on top of it.
 function setCubiixPos(cubiix, x, y) {
 	cubiix.posX = x;
 	cubiix.posY = y;
 	if (cubiix.nextInStack) {
 		setCubiixPos(cubiix.nextInStack, x, y);
 	}
+}
+
+//gets the distance between a cubiix and a point.
+function cubiixPointDist(cubiix, x, y) {
+	return Math.sqrt((cubiix.posX - x) * (cubiix.posX - x) + (cubiix.posY - y) * (cubiix.posY - y));
 }

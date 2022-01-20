@@ -150,7 +150,7 @@ function doWalking() {
 		playerCubiix.walking = true;
 	}
 	
-	if (targeting) {
+	if (targeting && cubiixPointDist(playerCubiix, targetX, targetY) > 1) {
 		playerCubiix.walking = true;
 	}
 	
@@ -167,10 +167,6 @@ function doWalking() {
 		setCubiixPos(playerCubiix, playerCubiix.posX + Math.cos(walkAngle) * walkSpeed * delta, playerCubiix.posY + Math.sin(walkAngle) * walkSpeed * delta);
 		
 		socket.send("[p]" + playerCubiix.posX + "|" + playerCubiix.posY);
-		
-		if (targeting && Math.abs(targetX - playerCubiix.posX) < 1 && Math.abs(targetY - playerCubiix.posY) < 1) {
-			targeting = false;
-		}
 	} else if (wasWalking) {
 		socket.send("[stopWalk]");
 	}
