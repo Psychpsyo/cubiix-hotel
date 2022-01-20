@@ -4,9 +4,23 @@ const wss = new WebSocketServer({port: 15882});
 let cubiixList = [];
 let lastId = 0;
 
-function sendToAll(message) {
+//set up a 100 x 100 map TODO: make this adjustable
+let mapWidth = 100;
+let mapHeight = 100;
+let map = [];
+for (let i = 0; i < mapHeight; i++) {
+	map.push([]);
+	for (let j = 0; j < mapWidth; j++) {
+		map[i].push(i % 2? "plankA" : "plankB");
+	}
+}
+
+//sends a message to all connected cubiix, except for the excluded one.
+function sendToAll(message, excluded = null) {
 	cubiixList.forEach(function(cubiix) {
-		cubiix.socket.send(message);
+		if (cubiix != excluded) {
+			cubiix.socket.send(message);
+		}
 	});
 }
 
@@ -25,7 +39,8 @@ wss.on("connection", function connection(ws) {
 				id: lastId,
 				nextInStack: null,
 				stackedOn: null,
-				name: args[0]
+				name: args[0],
+				nameColor: args[1]
 			};
 			lastId++;
 			
@@ -33,19 +48,22 @@ wss.on("connection", function connection(ws) {
 			
 			
 			//send the new cubiix to all other ones.
-			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.name);
+			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.name + "|" + thisCubiix.nameColor);
 			
 			//add new cubiix to the server-side list
 			cubiixList.push(thisCubiix);
 			
 			//send all cubiix to the new one and then tell it that all of them came through
 			cubiixList.forEach(function(cubiix) {
-				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : "") + "|" + cubiix.name);
+				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : "") + "|" + cubiix.name + "|" + cubiix.nameColor);
 			});
 			ws.send("[allCubiixSent]");
 			
 			//inform new cubiix about their id
 			ws.send("[yourId]" + thisCubiix.id);
+			
+			//send map to the new cubiix
+			ws.send("[map]" + mapWidth + "|" + mapHeight + "|" + serializeMap());
 			
 			ws.addEventListener("message", function(message) {
 				let msgType = message.data.substring(1, message.data.indexOf("]"));
@@ -56,8 +74,8 @@ wss.on("connection", function connection(ws) {
 					//TODO: validate movement distance
 					thisCubiix.posX = parseFloat(args[0]);
 					thisCubiix.posY = parseFloat(args[1]);
-					sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY);
-					sendToAll("[walk]" + thisCubiix.id + "|true");
+					sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
+					sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
 					break;
 				case "stopWalk":
 					thisCubiix.walking = false;
@@ -156,4 +174,12 @@ function recursiveUnstack(cubiix) {
 	if (cubiix.nextInStack) {
 		unstackCubiix(cubiix.nextInStack);
 	}
+}
+
+function serializeMap() {
+	let mapString = "";
+	for (let i = 0; i < mapHeight; i++) {
+		mapString += map[i].join("|") + "|";
+	}
+	return mapString.substring(0, mapString.length - 1);
 }

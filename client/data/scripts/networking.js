@@ -42,7 +42,8 @@ function receiveMessage(message) {
 				id: args[3],
 				nextInStack: null,
 				stackedOn: args[4] == ""? null : args[4],
-				name: args[5]
+				name: args[5],
+				nameColor: args[6]
 			});
 			break;
 		case "allCubiixSent":
@@ -60,6 +61,15 @@ function receiveMessage(message) {
 		case "yourId":
 			playerCubiix = cubiixById(args[0]);
 			break;
+		case "map":
+			//initialize map
+			worldMap = [];
+			let width = parseInt(args[0]);
+			let height = parseInt(args[1]);
+			for (let i = 0; i < height; i++) {
+				worldMap.push(args.slice(2 + i * width, 2 + i * width + width));
+			}
+			break;
 	}
 }
 
@@ -70,12 +80,12 @@ function connectToServer(address) {
 	socket = new WebSocket("ws://" + address);
 	socket.addEventListener("message", receiveMessage);
 	socket.addEventListener("open", function (event) {
-		socket.send("[init]" + name);
+		socket.send("[init]" + usernameInput.value + "|" + nameTagColorInput.value);
+		connected = true;
 	});
 }
 
 connectButton.addEventListener("click", function() {
-	name = usernameInput.value;
 	connectToServer(addressInput.value);
 	initialScreen.style.display = "none";
 	mainCanvas.style.display = "block";
