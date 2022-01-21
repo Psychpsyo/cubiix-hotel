@@ -3,20 +3,29 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Cubiix Hotel</title>
-		<link rel="stylesheet" href="data/index.css"></link>
+		<link rel="stylesheet" href="data/styles/index.css"></link>
+		<link rel="stylesheet" href="data/styles/chat.css"></link>
 	</head>
 	<body>
 		<div id="initialScreen" class="centered">
 			<label for="usernameInput">Username:</label> <input id="usernameInput"><br>
 			<label for="nameTagColorInput">Name Tag Color:</label> <input id="nameTagColorInput" type="color" value="#ffffff"><br>
 			<br>
-			<label for="addressInput">Server IP:</label> <input id="addressInput" value=""><br>
+			<label for="addressInput">Server IP:</label> <input id="addressInput"><br>
 			<br>
-			<label for="adminPasswordInput">Admin Password:</label> <input id="adminPasswordInput" value=""><br>
+			<label for="adminPasswordInput">Admin Password:</label> <input id="adminPasswordInput" type="password"><br>
 			<br>
 			<button id="connectButton">Connect</button>
 		</div>
-		<canvas id="mainCanvas" width="400" height="320" class="centered"></canvas>
+		<div id="gameArea">
+			<div id="chatArea">
+				<div id="chatHistory">
+					<!-- top area of chat -->
+				</div>
+				<input id="chatInput">
+			</div>
+			<canvas id="mainCanvas" width="400" height="320"></canvas>
+		</div>
 		
 		<script src="data/scripts/utility.js"></script>
 		<script src="data/scripts/index.js"></script>

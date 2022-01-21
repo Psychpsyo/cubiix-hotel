@@ -210,7 +210,7 @@ function doWalking() {
 document.addEventListener("keydown", function(e) {
 	if (!connected) return;
 	
-	switch(e.key) {
+	switch(e.code) {
 		case "ArrowLeft":
 			leftDown = true;
 			targeting = false
@@ -232,7 +232,7 @@ document.addEventListener("keydown", function(e) {
 document.addEventListener("keyup", function(e) {
 	if (!connected) return;
 	
-	switch(e.key) {
+	switch(e.code) {
 		case "ArrowLeft":
 			leftDown = false;
 			break;
@@ -245,12 +245,12 @@ document.addEventListener("keyup", function(e) {
 		case "ArrowDown":
 			downDown = false;
 			break;
-		case " ":
+		case "Space":
 			if ((playerCubiix.stackedOn && checkPerms("unstack")) || (!playerCubiix.stackedOn && checkPerms("stack"))) {
 				socket.send(playerCubiix.stackedOn? "[unstack]" : "[stack]");
 			}
 			break;
-		case "p":
+		case "KeyP":
 			if ((!playerCubiix.nextInStack && checkPerms("pickUp")) || (playerCubiix.nextInStack && checkPerms("drop"))) {
 				socket.send(playerCubiix.nextInStack? "[drop]" : "[pickUp]");
 			}
@@ -270,6 +270,16 @@ mainCanvas.addEventListener("mousemove", function(e) {
 	mouseX = (e.clientX - canvasRect.left) / currentGameScale;
 	mouseY = (e.clientY - canvasRect.top) / currentGameScale;
 });
+
+//make chat work
+chatInput.addEventListener("keypress", function(e) {
+	if (e.code == "Enter"){
+		socket.send("[chat]" + this.value);
+		chatHistory.appendChild(document.createTextNode(playerCubiix.name + ": " + this.value));
+		chatHistory.appendChild(document.createElement("br"));
+		this.value = "";
+	}
+})
 
 //resizing the canvas
 function resizeGame() {

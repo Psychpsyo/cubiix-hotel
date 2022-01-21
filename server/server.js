@@ -38,10 +38,9 @@ wss.on("connection", function connection(ws) {
 		let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 		
 		if(msgType == "init") {
-			let chosenSpawn = config.spawnPoints[Math.floor(Math.random() * config.spawnPoints.length)];
 			let thisCubiix = {
-				posX: chosenSpawn.x + Math.random() * chosenSpawn.sizeX - chosenSpawn.sizeX / 2,
-				posY: chosenSpawn.y + Math.random() * chosenSpawn.sizeY - chosenSpawn.sizeY / 2,
+				posX: 0,
+				posY: 0,
 				walking: false,
 				socket: ws,
 				id: lastId,
@@ -51,6 +50,8 @@ wss.on("connection", function connection(ws) {
 				nameColor: args[1],
 				perms: config.defaultPermSet
 			};
+			respawn(thisCubiix, true);
+			
 			if (config.enforceSpeedLimit) {
 				thisCubiix.claimedX = thisCubiix.posX;
 				thisCubiix.claimedY = thisCubiix.posY;
@@ -177,6 +178,21 @@ wss.on("connection", function connection(ws) {
 						console.log("Cubiix #" + thisCubiix.id + " (" + thisCubiix.name + ") is now admin.");
 					}
 					break;
+				case "chat":
+					let chatMessage = args.join("|");
+					if (chatMessage[0] == "/") {
+						doChatCommand(thisCubiix, chatMessage.substring(1));
+						break;
+					}
+					
+					if (!hasPerms(cubiix, "chat") {
+						ws.send("[error]You don't have the permission to send chat messages.");
+						break;
+					}
+					
+					//otherwise this is a regular chat message
+					sendToAll("[chat]" + thisCubiix.id + "|" + chatMessage, thisCubiix);
+					break;
 				}
 			});
 			
@@ -193,7 +209,33 @@ wss.on("connection", function connection(ws) {
 	}, {once: true});
 });
 
+//execute a chat command from a user
+function doChatCommand(cubiix, command) {
+	if (!hasPerms(cubiix, "commands")) {
+		cubiix.socket.send("[error]You don't have the permission to run chat commands.");
+		return;
+	}
+	switch (command.substring(0, (command + " ").indexOf(" "))) {
+		case "respawn":
+			respawn(cubiix);
+			break;
+		default:
+			cubiix.socket.send("[error]Command does not exist.");
+	}
+}
+
 //utility functions
+
+//put cubiix at spawn point
+function respawn(cubiix, initialSpawn = false) {
+	let chosenSpawn = config.spawnPoints[Math.floor(Math.random() * config.spawnPoints.length)];
+	cubiix.posX = chosenSpawn.x + Math.random() * chosenSpawn.sizeX - chosenSpawn.sizeX / 2;
+	cubiix.posY = chosenSpawn.y + Math.random() * chosenSpawn.sizeY - chosenSpawn.sizeY / 2;
+	
+	if (!initialSpawn) {
+		sendToAll("[p]" + cubiix.id + "|" + cubiix.posX + "|" + cubiix.posY);
+	}
+}
 
 //check if a cubiix has the specified permission
 function hasPerms(cubiix, permission) {

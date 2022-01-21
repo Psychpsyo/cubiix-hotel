@@ -45,6 +45,17 @@ function receiveMessage(message) {
 			droppedCubiix.stackedOn.nextInStack = null;
 			droppedCubiix.stackedOn = null;
 			break;
+		case "chat":
+			chatHistory.appendChild(document.createTextNode(cubiixById(args[0]).name + ": " + args.splice(1).join("|")));
+			chatHistory.appendChild(document.createElement("br"));
+			break;
+		case "error":
+			let newError = document.createElement("span");
+			newError.textContent = args.join("|");
+			newError.classList.add("error");
+			chatHistory.appendChild(newError);
+			chatHistory.appendChild(document.createElement("br"));
+			break;
 		case "newCubiix":
 			cubiixList.push({
 				posX: parseFloat(args[0]),
@@ -135,5 +146,5 @@ function connectToServer(address) {
 connectButton.addEventListener("click", function() {
 	connectToServer(addressInput.value);
 	initialScreen.style.display = "none";
-	mainCanvas.style.display = "block";
+	gameArea.style.display = "flex";
 })

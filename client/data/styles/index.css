@@ -1,0 +1,61 @@
+@font-face {
+	font-family: "Cubes";
+	src: url("../Cubes.ttf");
+}
+
+* {
+	font-family: "Cubes";
+}
+
+html {
+	font-size: 1.75em;
+}
+
+html, body {
+	padding: 0;
+	margin: 0;
+	height: 100%;
+}
+
+#initialScreen {
+	text-align: center;
+}
+
+#gameArea {
+	display: none;
+	padding: .3em .5em;
+	align-items: center;
+	height: 100%;
+	box-sizing: border-box;
+}
+
+#chatHistory {
+	flex-grow: 1;
+	overflow-y: scroll;
+}
+
+#chatArea {
+	flex-grow: 1;
+	padding-right: .5em;
+	align-self: stretch;
+	display: flex;
+	flex-direction: column;
+}
+
+#chatInput {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+#mainCanvas {
+	background: black;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+.centered {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
