@@ -8,7 +8,8 @@ var lastId = 0;
 //load config file
 var config = JSON.parse(fs.readFileSync("config.json"));
 if (config.generateAdminPassword) {
-	config.adminPassword == String(Math.random() * 10000000).padStart(8, "0");
+	config.adminPassword = String(Math.floor(Math.random() * 10000000)).padStart(8, "0");
+	console.log("Generated admin password " + config.adminPassword + " for this session.")
 }
 //TODO: validate config file
 
