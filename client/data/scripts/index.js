@@ -97,7 +97,7 @@ function drawCubiix(cubiix, x, y, time) {
 		while(currentCubiix) {
 			ctx.fillStyle = currentCubiix.nameColor;
 			ctx.fillText(currentCubiix.name, x - Math.floor(ctx.measureText(currentCubiix.name).width / 2), y - currentY);
-			currentY += 10;
+			currentY += 15;
 			currentCubiix = currentCubiix.nextInStack;
 		}
 	}
@@ -248,6 +248,11 @@ document.addEventListener("keyup", function(e) {
 		case " ":
 			if ((playerCubiix.stackedOn && checkPerms("unstack")) || (!playerCubiix.stackedOn && checkPerms("stack"))) {
 				socket.send(playerCubiix.stackedOn? "[unstack]" : "[stack]");
+			}
+			break;
+		case "p":
+			if ((!playerCubiix.nextInStack && checkPerms("pickUp")) || (playerCubiix.nextInStack && checkPerms("drop"))) {
+				socket.send(playerCubiix.nextInStack? "[drop]" : "[pickUp]");
 			}
 			break;
 	}

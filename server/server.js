@@ -55,11 +55,9 @@ wss.on("connection", function connection(ws) {
 				thisCubiix.claimedX = thisCubiix.posX;
 				thisCubiix.claimedY = thisCubiix.posY;
 			}
-			
 			lastId++;
 			
-			console.log("Cubiix connected. Assigning id " + thisCubiix.id + ".");
-			
+			console.log("Cubiix '" + thisCubiix.name + "' connected. Assigning id " + thisCubiix.id + ".");
 			
 			//send the new cubiix to all other ones.
 			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.name + "|" + thisCubiix.nameColor);
@@ -151,9 +149,32 @@ wss.on("connection", function connection(ws) {
 						unstackCubiix(thisCubiix);
 					}
 					break;
+				case "pickUp":
+					if (!hasPerms(thisCubiix, "pickUp")) break;
+					let pickedUp = closestCubiix(thisCubiix);
+					if (pickedUp && cubiixDist(thisCubiix, pickedUp) < 32) {
+						topSelf = topCubiixInStack(thisCubiix); //top cubiix in this stack
+						pickedUp.stackedOn = topSelf;
+						topSelf.nextInStack = pickedUp;
+						sendToAll("[stack]" + pickedUp.id + "|" + topSelf.id);
+					}
+					break;
+				case "drop":
+					if (!hasPerms(thisCubiix, "drop")) break;
+					if (thisCubiix.nextInStack) {
+						sendToAll("[drop]" + thisCubiix.nextInStack.id);
+						thisCubiix.nextInStack.posX = bottomCubiixInStack(thisCubiix).posX;
+						thisCubiix.nextInStack.posY = bottomCubiixInStack(thisCubiix).posY;
+						
+						thisCubiix.nextInStack.stackedOn = null;
+						thisCubiix.nextInStack = null;
+					}
+					break;
 				case "requestAdmin":
 					if (config.adminPassword != "" && args[0] == config.adminPassword) {
 						thisCubiix.perms.push("admin");
+						ws.send("[givePerms]admin");
+						console.log("Cubiix #" + thisCubiix.id + " (" + thisCubiix.name + ") is now admin.");
 					}
 					break;
 				}
@@ -164,7 +185,7 @@ wss.on("connection", function connection(ws) {
 				unstackCubiix(thisCubiix);
 				cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
 				sendToAll("[disconnected]" + thisCubiix.id);
-				console.log("Cubiix with id " + thisCubiix.id + " disconnected.");
+				console.log("Cubiix #" + thisCubiix.id + " (" + thisCubiix.name + ") disconnected.");
 			});
 		} else {
 			ws.close();

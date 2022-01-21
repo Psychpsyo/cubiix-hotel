@@ -37,6 +37,14 @@ function receiveMessage(message) {
 		case "unstack":
 			unstackCubiix(cubiixById(args[0]));
 			break;
+		case "drop":
+			let droppedCubiix = cubiixById(args[0]);
+			droppedCubiix.posX = bottomCubiixInStack(droppedCubiix).posX;
+			droppedCubiix.posY = bottomCubiixInStack(droppedCubiix).posY;
+			
+			droppedCubiix.stackedOn.nextInStack = null;
+			droppedCubiix.stackedOn = null;
+			break;
 		case "newCubiix":
 			cubiixList.push({
 				posX: parseFloat(args[0]),
@@ -119,7 +127,7 @@ function connectToServer(address) {
 		socket.send("[init]" + usernameInput.value + "|" + nameTagColorInput.value);
 		
 		if (adminPasswordInput.value != "") {
-			socket.send("[requestAdmin]" + adminPasswordInput);
+			socket.send("[requestAdmin]" + adminPasswordInput.value);
 		}
 	});
 }

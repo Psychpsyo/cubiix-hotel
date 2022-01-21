@@ -10,7 +10,7 @@
 		}
 	],
 	"walkSpeed": 100,
-	"defaultPermSet": ["move", "stack", "unstack", "pickUp", "floorEdit", "teleport", "chat"],
+	"defaultPermSet": ["move", "stack", "unstack", "chat"],
 	"adminPassword": "",
 	"generateAdminPassword": true
 }
