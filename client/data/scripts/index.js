@@ -17,6 +17,7 @@ var leftDown = false;
 var rightDown = false;
 var upDown = false;
 var downDown = false;
+var ctrlDown = false;
 var mouseHolding = false;
 var targeting = false;
 var targetX = 0; //target x position for mouse movement
@@ -36,7 +37,7 @@ var sprites = {
 		red: new Image(),
 		green: new Image(),
 		blue: new Image(),
-		black: new Image()
+		missing: new Image()
 	}
 }
 sprites.cubiix.src = "data/cubiix.png";
@@ -51,57 +52,6 @@ ctx.font = "18px Cubes";
 resizeGame();
 //do the first game tick
 requestAnimationFrame(update);
-
-function renderFrame(time) {
-	//draw background
-	ctx.fillStyle = "black";
-	ctx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-	
-	//render ground
-	worldMap.forEach(function(strip, i) {
-		strip.forEach(function(tile, j) {
-			if (tile[0] == "#") { //draw colored tile if the tile is a hex code.
-				ctx.drawImage(sprites.tiles["black"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
-				ctx.globalCompositeOperation = "lighter";
-				ctx.globalAlpha = parseInt(tile.substring(1, 3), 16) / 255;
-				ctx.drawImage(sprites.tiles["red"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
-				ctx.globalAlpha = parseInt(tile.substring(3, 5), 16) / 255;
-				ctx.drawImage(sprites.tiles["green"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
-				ctx.globalAlpha = parseInt(tile.substring(5, 8), 16) / 255;
-				ctx.drawImage(sprites.tiles["blue"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
-				ctx.globalAlpha = 1;
-				ctx.globalCompositeOperation = "source-over";
-			} else {
-				ctx.drawImage(sprites.tiles[tile], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
-			}
-		})
-	});
-	
-	//render cubiix
-	cubiixList.sort(function(a, b) {
-		return a.posY - b.posY;
-	}).forEach(cubiix => {
-		if (cubiix.stackedOn) return;
-		drawCubiix(cubiix, Math.floor(cubiix.posX - scrollX), Math.floor(cubiix.posY - scrollY), time);
-	});
-}
-
-function drawCubiix(cubiix, x, y, time) {
-	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 15000 * walkSpeed) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 15000 * walkSpeed) % 2)? 2 : 0) : 0), 32, 32);
-	if (cubiix.nextInStack) {
-		drawCubiix(cubiix.nextInStack, x, y - 19, time);
-	} else {
-		//draw nametags once reaching the top of the stack
-		let currentY = 32;
-		let currentCubiix = bottomCubiixInStack(cubiix);
-		while(currentCubiix) {
-			ctx.fillStyle = currentCubiix.nameColor;
-			ctx.fillText(currentCubiix.name, x - Math.floor(ctx.measureText(currentCubiix.name).width / 2), y - currentY);
-			currentY += 15;
-			currentCubiix = currentCubiix.nextInStack;
-		}
-	}
-}
 
 var lastTime = 0;
 var delta = 0;
@@ -183,6 +133,10 @@ function doWalking() {
 			walkAngle = Math.atan2(targetY - playerCubiix.posY, targetX - playerCubiix.posX);
 			playerCubiix.facingRight = playerCubiix.posX < targetX;
 			playerCubiix.facingUp = playerCubiix.posY > targetY;
+			
+			if (cubiixPointDist(playerCubiix, targetX, targetY) < 2 && !mouseHolding) {
+				targeting = false;
+			}
 		} else {
 			walkAngle = Math.atan2(yMove, xMove);
 		}
@@ -227,6 +181,9 @@ document.addEventListener("keydown", function(e) {
 			downDown = true;
 			targeting = false
 			break;
+		case "ControlLeft":
+			ctrlDown = true;
+			break;
 	}
 });
 document.addEventListener("keyup", function(e) {
@@ -255,15 +212,22 @@ document.addEventListener("keyup", function(e) {
 				socket.send(playerCubiix.nextInStack? "[drop]" : "[pickUp]");
 			}
 			break;
+		case "ControlLeft":
+			ctrlDown = false;
+			break;
 	}
 });
 //mouse controls
 mainCanvas.addEventListener("mousedown", function(e) {
 	mouseHolding = true;
+	
 	targeting = true;
 });
 mainCanvas.addEventListener("mouseup", function(e) {
 	mouseHolding = false;
+	if (cubiixPointDist(playerCubiix, targetX, targetY) < 2 || playerCubiix.stackedOn) {
+		targeting = false;
+	}
 });
 mainCanvas.addEventListener("mousemove", function(e) {
 	let canvasRect = this.getBoundingClientRect();

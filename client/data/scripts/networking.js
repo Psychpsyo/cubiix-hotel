@@ -31,8 +31,15 @@ function receiveMessage(message) {
 			cubiixById(args[0]).walking = args[1] == "true";
 			break;
 		case "stack":
-			cubiixById(args[0]).stackedOn = cubiixById(args[1]);
-			cubiixById(args[1]).nextInStack = cubiixById(args[0]);
+			let topCubiix = cubiixById(args[0]);
+			let bottomCubiix = cubiixById(args[1]);
+			topCubiix.stackedOn = bottomCubiix;
+			bottomCubiix.nextInStack = topCubiix;
+			
+			//stop walking to a target when stacking
+			if (topCubiix === playerCubiix && !mouseHolding) {
+				targeting = false;
+			}
 			break;
 		case "unstack":
 			unstackCubiix(cubiixById(args[0]));
@@ -66,8 +73,8 @@ function receiveMessage(message) {
 				id: args[3],
 				nextInStack: null,
 				stackedOn: args[4] == ""? null : args[4],
-				name: args[5],
-				nameColor: args[6]
+				name: args.splice(6).join("|"),
+				nameColor: args[5]
 			});
 			break;
 		case "allCubiixSent":
@@ -135,7 +142,7 @@ function connectToServer(address) {
 	socket.addEventListener("message", receiveMessage);
 	socket.addEventListener("open", function (event) {
 		connected = true;
-		socket.send("[init]" + usernameInput.value + "|" + nameTagColorInput.value);
+		socket.send("[init]" + nameTagColorInput.value + "|" + usernameInput.value);
 		
 		if (adminPasswordInput.value != "") {
 			socket.send("[requestAdmin]" + adminPasswordInput.value);

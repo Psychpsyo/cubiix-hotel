@@ -46,8 +46,8 @@ wss.on("connection", function connection(ws) {
 				id: lastId,
 				nextInStack: null,
 				stackedOn: null,
-				name: args[0],
-				nameColor: args[1],
+				name: args.splice(1).join("|"),
+				nameColor: args[0],
 				perms: config.defaultPermSet
 			};
 			respawn(thisCubiix, true);
@@ -58,17 +58,17 @@ wss.on("connection", function connection(ws) {
 			}
 			lastId++;
 			
-			console.log("Cubiix '" + thisCubiix.name + "' connected. Assigning id " + thisCubiix.id + ".");
+			console.log("Cubiix '" + thisCubiix.name + "+" + thisCubiix.id + "' connected.");
 			
 			//send the new cubiix to all other ones.
-			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.name + "|" + thisCubiix.nameColor);
+			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.nameColor + "|" + thisCubiix.name);
 			
 			//add new cubiix to the server-side list
 			cubiixList.push(thisCubiix);
 			
 			//send all cubiix to the new one and then tell it that all of them came through
 			cubiixList.forEach(function(cubiix) {
-				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : "") + "|" + cubiix.name + "|" + cubiix.nameColor);
+				ws.send("[newCubiix]" + cubiix.posX + "|" + cubiix.posY + "|" + cubiix.walking + "|" + cubiix.id + "|" + (cubiix.stackedOn? cubiix.stackedOn.id : "") + "|" + cubiix.nameColor + "|" + cubiix.name);
 			});
 			ws.send("[allCubiixSent]");
 			
@@ -175,7 +175,7 @@ wss.on("connection", function connection(ws) {
 					if (config.adminPassword != "" && args[0] == config.adminPassword) {
 						thisCubiix.perms.push("admin");
 						ws.send("[givePerms]admin");
-						console.log("Cubiix #" + thisCubiix.id + " (" + thisCubiix.name + ") is now admin.");
+						console.log("Cubiix '" + thisCubiix.name + "#" + thisCubiix.id + "' is now admin.");
 					}
 					break;
 				case "chat":
@@ -201,7 +201,7 @@ wss.on("connection", function connection(ws) {
 				unstackCubiix(thisCubiix);
 				cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
 				sendToAll("[disconnected]" + thisCubiix.id);
-				console.log("Cubiix #" + thisCubiix.id + " (" + thisCubiix.name + ") disconnected.");
+				console.log("Cubiix '" + thisCubiix.name + "#" + thisCubiix.id + "' disconnected.");
 			});
 		} else {
 			ws.close();
