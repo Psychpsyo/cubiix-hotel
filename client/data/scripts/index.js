@@ -27,7 +27,11 @@ var sprites = {
 	tiles: {
 		grid: new Image(),
 		plankA: new Image(),
-		plankB: new Image()
+		plankB: new Image(),
+		red: new Image(),
+		green: new Image(),
+		blue: new Image(),
+		black: new Image()
 	}
 }
 sprites.cubiix.src = "data/cubiix.png";
@@ -51,7 +55,20 @@ function renderFrame(time) {
 	//render ground
 	worldMap.forEach(function(strip, i) {
 		strip.forEach(function(tile, j) {
-			ctx.drawImage(sprites.tiles[tile], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+			if (tile[0] == "#") { //draw colored tile if the tile is a hex code.
+				ctx.drawImage(sprites.tiles["black"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+				ctx.globalCompositeOperation = "lighter";
+				ctx.globalAlpha = parseInt(tile.substring(1, 3), 16) / 255;
+				ctx.drawImage(sprites.tiles["red"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+				ctx.globalAlpha = parseInt(tile.substring(3, 5), 16) / 255;
+				ctx.drawImage(sprites.tiles["green"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+				ctx.globalAlpha = parseInt(tile.substring(5, 8), 16) / 255;
+				ctx.drawImage(sprites.tiles["blue"], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+				ctx.globalAlpha = 1;
+				ctx.globalCompositeOperation = "source-over";
+			} else {
+				ctx.drawImage(sprites.tiles[tile], j * 32 - Math.floor(scrollX) + (i % 2? 16 : 0), i * 8 - Math.floor(scrollY));
+			}
 		})
 	});
 	
