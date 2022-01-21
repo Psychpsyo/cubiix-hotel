@@ -2,7 +2,7 @@
 	"mapWidth": 100,
 	"mapHeight": 100,
 	"spawnX": 1500,
-	"spawnY": 750,
+	"spawnY": 375,
 	"walkSpeed": 100,
 	"enforceSpeedLimit": true
 }

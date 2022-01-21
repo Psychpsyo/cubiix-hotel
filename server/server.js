@@ -98,7 +98,6 @@ wss.on("connection", function connection(ws) {
 							//check if cubiix is too far from where they should be and, if so, reset them locally.
 							if (cubiixPointDist(thisCubiix, thisCubiix.claimedX, thisCubiix.claimedY) > 5) {
 								ws.send("[p]" + thisCubiix.id + "|" + newX + "|" + newY, thisCubiix);
-								console.log("Stop right there, criminal scum! You have violated the law!");
 							}
 						}
 					}
