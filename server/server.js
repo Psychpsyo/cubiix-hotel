@@ -1,4 +1,5 @@
 import {WebSocketServer} from "ws";
+const ws = require("ws");
 
 const wss = new WebSocketServer({port: 15882});
 let cubiixList = [];
