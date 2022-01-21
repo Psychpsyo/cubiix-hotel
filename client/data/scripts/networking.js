@@ -20,6 +20,12 @@ function receiveMessage(message) {
 			} else if (cubiix.posY < oldY) {
 				cubiix.facingUp = true;
 			}
+			
+			//if server puts the player outside the scroll-to area, center camera on their cubiix.
+			if (cubiix == playerCubiix && Math.abs(playerCubiix.posX - (scrollX + 200)) > 100 || Math.abs(playerCubiix.posY - (scrollY + 160)) > 60) {
+				scrollX = playerCubiix.posX - 200;
+				scrollY = playerCubiix.posY - 160;
+			}
 			break;
 		case "walk":
 			cubiixById(args[0]).walking = args[1] == "true";
