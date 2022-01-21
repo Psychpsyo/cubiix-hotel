@@ -3,9 +3,14 @@ var walkSpeed = 100;
 var playerCubiix = {}
 var cubiixList = [];
 var worldMap = [];
+var mapWidth = 0;
+var mapHeight = 0;
 var socket = null;
 var currentGameScale = 1;
 var connected = false;
+var yourPerms = [];
+var floorEditMode = false;
+var floorEditPen = "grid";
 
 //control related variables
 var leftDown = false;
@@ -112,9 +117,7 @@ function update(time) {
 	lastTime = time;
 	
 	//controls for walking
-	if (!playerCubiix.stackedOn) {
-		doWalking();
-	}
+	doWalking();
 	
 	//scroll along the X and why when too close to the screen border
 	if (playerCubiix.posX > scrollX + 300) {
@@ -137,6 +140,9 @@ function update(time) {
 }
 
 function doWalking() {
+	//check if you can/are allowed to walk
+	if (playerCubiix.stackedOn || !checkPerms("move")) return;
+	
 	if (mouseHolding) {
 		targetX = mouseX + scrollX;
 		targetY = mouseY + scrollY;
@@ -184,6 +190,16 @@ function doWalking() {
 		setCubiixPos(playerCubiix, playerCubiix.posX + Math.cos(walkAngle) * walkSpeed * delta, playerCubiix.posY + Math.sin(walkAngle) * walkSpeed * delta);
 		
 		socket.send("[p]" + playerCubiix.posX + "|" + playerCubiix.posY);
+		
+		if (floorEditMode && checkPerms("floorEdit")) {
+			tile = tileCoords(playerCubiix.posX, playerCubiix.posY);
+			if (tile[0] >= 0 && tile[1] >= 0 && tile[0] < mapWidth && tile[1] < mapHeight) {
+				if (worldMap[tile[1]][tile[0]] != floorEditPen) {
+					socket.send("[floor]" + tile[0] + "|" + tile[1] + "|" + floorEditPen);
+					worldMap[tile[1]][tile[0]] = floorEditPen;
+				}
+			}
+		}
 	} else if (wasWalking) {
 		socket.send("[stopWalk]");
 	}
@@ -230,7 +246,9 @@ document.addEventListener("keyup", function(e) {
 			downDown = false;
 			break;
 		case " ":
-			socket.send("[stack]");
+			if ((playerCubiix.stackedOn && checkPerms("unstack")) || (!playerCubiix.stackedOn && checkPerms("stack"))) {
+				socket.send(playerCubiix.stackedOn? "[unstack]" : "[stack]");
+			}
 			break;
 	}
 });

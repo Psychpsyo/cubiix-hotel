@@ -10,5 +10,7 @@
 		}
 	],
 	"walkSpeed": 100,
-	"enforceSpeedLimit": true
+	"defaultPermSet": ["move", "stack", "unstack", "pickUp", "floorEdit", "teleport"],
+	"adminPassword": "",
+	"generateAdminPassword": true
 }

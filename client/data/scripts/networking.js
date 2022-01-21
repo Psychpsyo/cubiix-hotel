@@ -63,6 +63,9 @@ function receiveMessage(message) {
 		case "disconnected":
 			cubiixList.splice(cubiixList.indexOf(cubiixById(args[0])), 1);
 			break;
+		case "floor":
+			worldMap[parseInt(args[1])][parseInt(args[0])] = args[2];
+			break;
 		case "walkSpeed":
 			walkSpeed = args[0];
 			break;
@@ -73,13 +76,23 @@ function receiveMessage(message) {
 			scrollX = playerCubiix.posX - 200;
 			scrollY = playerCubiix.posY - 160;
 			break;
+		case "givePerms":
+			yourPerms = yourPerms.concat(args);
+			break;
+		case "takePerms":
+			for (permission of args) {
+				while (permission in yourPerms) {
+					yourPerms.splice(yourPerms.indexOf(permission), 1);
+				}
+			}
+			break;
 		case "map":
 			//initialize map
 			worldMap = [];
-			let width = parseInt(args[0]);
-			let height = parseInt(args[1]);
-			for (let i = 0; i < height; i++) {
-				worldMap.push(args.slice(2 + i * width, 2 + i * width + width));
+			mapWidth = parseInt(args[0]);
+			mapHeight = parseInt(args[1]);
+			for (let i = 0; i < mapHeight; i++) {
+				worldMap.push(args.slice(2 + i * mapWidth, 2 + i * mapWidth + mapHeight));
 			}
 			break;
 	}
@@ -88,12 +101,26 @@ function receiveMessage(message) {
 function connectToServer(address) {
 	if (socket) {
 		socket.close();
+		//reset data
+		map = [];
+		yourPerms = [];
+		cubiixList = [];
 	}
-	socket = new WebSocket("ws://" + address);
+	
+	let url = new URL("ws://" + address);
+	if (url.port == "") {
+		url.port = 15882;
+	}
+	
+	socket = new WebSocket(url.href);
 	socket.addEventListener("message", receiveMessage);
 	socket.addEventListener("open", function (event) {
-		socket.send("[init]" + usernameInput.value + "|" + nameTagColorInput.value);
 		connected = true;
+		socket.send("[init]" + usernameInput.value + "|" + nameTagColorInput.value);
+		
+		if (adminPasswordInput.value != "") {
+			socket.send("[requestAdmin]" + adminPasswordInput);
+		}
 	});
 }
 

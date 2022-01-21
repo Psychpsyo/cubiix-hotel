@@ -42,3 +42,19 @@ function setCubiixPos(cubiix, x, y) {
 function cubiixPointDist(cubiix, x, y) {
 	return Math.sqrt((cubiix.posX - x) * (cubiix.posX - x) + (cubiix.posY - y) * (cubiix.posY - y));
 }
+
+//check if the player has the permission to perform an action
+function checkPerms(permission) {
+	return yourPerms.includes(permission) || yourPerms.includes("admin");
+}
+
+function tileCoords(mouseX, mouseY) {
+	mouseX /= 16;
+	mouseY /= 8;
+	tempX = mouseX;
+	under = mouseY % 1 > ((Math.floor(mouseX) % 2 == Math.floor(mouseY) % 2)? 1 - mouseX % 1 : mouseX % 1);
+	mouseY = Math.floor(mouseY - !under);
+	mouseX = Math.floor(mouseX / 2) - ((mouseY % 2 && !Math.floor(mouseX % 2))? 1 : 0);
+	
+	return [mouseX, mouseY];
+}

@@ -7,14 +7,17 @@ var lastId = 0;
 
 //load config file
 var config = JSON.parse(fs.readFileSync("config.json"));
+if (config.generateAdminPassword) {
+	config.adminPassword == String(Math.random() * 10000000).padStart(8, "0");
+}
 //TODO: validate config file
 
 //set up the map. TODO: load from file or so.
-var map = [];
+var worldMap = [];
 for (let i = 0; i < config.mapHeight; i++) {
-	map.push([]);
+	worldMap.push([]);
 	for (let j = 0; j < config.mapWidth; j++) {
-		map[i].push(i % 2? "plankA" : "plankB");
+		worldMap[i].push(i % 2? "plankA" : "plankB");
 	}
 }
 
@@ -44,7 +47,8 @@ wss.on("connection", function connection(ws) {
 				nextInStack: null,
 				stackedOn: null,
 				name: args[0],
-				nameColor: args[1]
+				nameColor: args[1],
+				perms: config.defaultPermSet
 			};
 			if (config.enforceSpeedLimit) {
 				thisCubiix.claimedX = thisCubiix.posX;
@@ -74,6 +78,8 @@ wss.on("connection", function connection(ws) {
 			ws.send("[map]" + config.mapWidth + "|" + config.mapHeight + "|" + serializeMap());
 			//send movement speed to new cubiix
 			ws.send("[walkSpeed]" + config.walkSpeed);
+			//tell new cubiix what their perms are
+			ws.send("[givePerms]" + thisCubiix.perms.join("|"));
 			
 			let lastPositionMessage = 0; //timestamp of when the last [p] update came in and the cubiix position was actually changed.
 			
@@ -83,11 +89,12 @@ wss.on("connection", function connection(ws) {
 				
 				switch(msgType) {
 				case "p":
+					if (!hasPerms(thisCubiix, "move")) break;
 					let newX = parseFloat(args[0]);
 					let newY = parseFloat(args[1]);
 					
 					//movement speed validation
-					if (config.enforceSpeedLimit) {
+					if (!hasPerms(thisCubiix, "teleport")) {
 						thisCubiix.claimedX = newX;
 						thisCubiix.claimedY = newY;
 						
@@ -118,11 +125,17 @@ wss.on("connection", function connection(ws) {
 					thisCubiix.walking = false;
 					sendToAll("[walk]" + thisCubiix.id + "|false");
 					break;
-				case "stack":
-					if (thisCubiix.stackedOn) {
-						unstackCubiix(thisCubiix);
-						break;
+				case "floor": //the cubiix is attempting to edit a floor tile
+					if (!hasPerms(thisCubiix, "floorEdit")) break;
+					let x = parseInt(args[0]);
+					let y = parseInt(args[1]);
+					if (x >= 0 && y >= 0 && x < config.mapWidth && y < config.mapHeight) {
+						worldMap[y][x] = args[2];
+						sendToAll("[floor]" + args[0] + "|" + args[1] + "|" + args[2], thisCubiix);
 					}
+					break;
+				case "stack":
+					if (!hasPerms(thisCubiix, "stack")) break;
 					let other = closestCubiix(thisCubiix);
 					if (other && cubiixDist(thisCubiix, other) < 32) {
 						other = topCubiixInStack(other);
@@ -131,8 +144,16 @@ wss.on("connection", function connection(ws) {
 						sendToAll("[stack]" + thisCubiix.id + "|" + other.id);
 					}
 					break;
-				case "init":
-					
+				case "unstack":
+					if (!hasPerms(thisCubiix, "unstack")) break;
+					if (thisCubiix.stackedOn) {
+						unstackCubiix(thisCubiix);
+					}
+					break;
+				case "requestAdmin":
+					if (config.adminPassword != "" && args[0] == config.adminPassword) {
+						thisCubiix.perms.push("admin");
+					}
 					break;
 				}
 			});
@@ -152,6 +173,10 @@ wss.on("connection", function connection(ws) {
 
 //utility functions
 
+//check if a cubiix has the specified permission
+function hasPerms(cubiix, permission) {
+	return cubiix.perms.includes(permission) || cubiix.perms.includes("admin");
+}
 
 //gets the distance between a cubiix and a point.
 function cubiixPointDist(cubiix, x, y) {
@@ -221,7 +246,7 @@ function recursiveUnstack(cubiix) {
 function serializeMap() {
 	let mapString = "";
 	for (let i = 0; i < config.mapHeight; i++) {
-		mapString += map[i].join("|") + "|";
+		mapString += worldMap[i].join("|") + "|";
 	}
 	return mapString.substring(0, mapString.length - 1);
 }
