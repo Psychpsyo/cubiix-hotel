@@ -4,6 +4,5 @@
 	"spawnX": 1500,
 	"spawnY": 750,
 	"walkSpeed": 100,
-	"speedLimit": 101,
 	"enforceSpeedLimit": true
 }

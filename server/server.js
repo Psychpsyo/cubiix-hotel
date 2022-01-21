@@ -37,6 +37,9 @@ wss.on("connection", function connection(ws) {
 			let thisCubiix = {
 				posX: config.spawnX,
 				posY: config.spawnY,
+				//claimed X and Y are used to check if the cubiix has moved to fast (far)
+				claimedX: config.spawnX,
+				claimedY: config.spawnY,
 				walking: false,
 				socket: ws,
 				id: lastId,
@@ -79,8 +82,26 @@ wss.on("connection", function connection(ws) {
 				case "p":
 					let newX = parseFloat(args[0]);
 					let newY = parseFloat(args[1]);
-					//check if moving too far
-					if (config.enforceSpeedLimit == (Math.min(process.uptime() - lastPositionMessage, .05) * config.speedLimit >= cubiixPointDist(thisCubiix, newX, newY))) break;
+					
+					//movement speed validation
+					if (config.enforceSpeedLimit) {
+						thisCubiix.claimedX = newX;
+						thisCubiix.claimedY = newY;
+						
+						clampedDelta = Math.min(process.uptime() - lastPositionMessage, .1); //gets clamped to not allow massive jumps in position after a long while of standing still.
+						if (clampedDelta * config.walkSpeed < cubiixPointDist(thisCubiix, newX, newY)) {
+							//if so, limit the movement down to the actual limit
+							let moveAngle = Math.atan2(newY - thisCubiix.posY, newX - thisCubiix.posX);
+							newX = thisCubiix.posX + Math.cos(moveAngle) * config.walkSpeed * clampedDelta;
+							newY = thisCubiix.posY + Math.sin(moveAngle) * config.walkSpeed * clampedDelta;
+							
+							//check if cubiix is too far from where they should be and, if so, reset them locally.
+							if (cubiixPointDist(thisCubiix, thisCubiix.claimedX, thisCubiix.claimedY) > 5) {
+								ws.send("[p]" + thisCubiix.id + "|" + newX + "|" + newY, thisCubiix);
+								console.log("Stop right there, criminal scum! You have violated the law!");
+							}
+						}
+					}
 					
 					lastPositionMessage = process.uptime();
 					if (!thisCubiix.stackedOn) {
@@ -89,6 +110,7 @@ wss.on("connection", function connection(ws) {
 						sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
 						sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
 					}
+					
 					break;
 				case "stopWalk":
 					thisCubiix.walking = false;
