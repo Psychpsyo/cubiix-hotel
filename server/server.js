@@ -34,12 +34,10 @@ wss.on("connection", function connection(ws) {
 		let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 		
 		if(msgType == "init") {
+			let chosenSpawn = config.spawnPoints[Math.floor(Math.random() * config.spawnPoints.length)];
 			let thisCubiix = {
-				posX: config.spawnX,
-				posY: config.spawnY,
-				//claimed X and Y are used to check if the cubiix has moved to fast (far)
-				claimedX: config.spawnX,
-				claimedY: config.spawnY,
+				posX: chosenSpawn.x + Math.random() * chosenSpawn.sizeX - chosenSpawn.sizeX / 2,
+				posY: chosenSpawn.y + Math.random() * chosenSpawn.sizeY - chosenSpawn.sizeY / 2,
 				walking: false,
 				socket: ws,
 				id: lastId,
@@ -48,6 +46,11 @@ wss.on("connection", function connection(ws) {
 				name: args[0],
 				nameColor: args[1]
 			};
+			if (config.enforceSpeedLimit) {
+				thisCubiix.claimedX = thisCubiix.posX;
+				thisCubiix.claimedY = thisCubiix.posY;
+			}
+			
 			lastId++;
 			
 			console.log("Cubiix connected. Assigning id " + thisCubiix.id + ".");

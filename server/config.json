@@ -1,8 +1,14 @@
 {
 	"mapWidth": 100,
 	"mapHeight": 100,
-	"spawnX": 1500,
-	"spawnY": 375,
+	"spawnPoints": [
+		{
+			"x": 1500,
+			"y": 375,
+			"sizeX": 150,
+			"sizeY": 150,
+		}
+	],
 	"walkSpeed": 100,
 	"enforceSpeedLimit": true
 }
