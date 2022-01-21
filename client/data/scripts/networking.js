@@ -62,6 +62,10 @@ function receiveMessage(message) {
 			break;
 		case "yourId":
 			playerCubiix = cubiixById(args[0]);
+			
+			//center camera on the cubiix.
+			scrollX = playerCubiix.posX - 200;
+			scrollY = playerCubiix.posY - 160;
 			break;
 		case "map":
 			//initialize map
