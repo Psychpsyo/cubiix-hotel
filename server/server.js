@@ -1,17 +1,19 @@
-import {WebSocketServer} from "ws";
 const ws = require("ws");
+const fs = require("fs");
 
-const wss = new WebSocketServer({port: 15882});
-let cubiixList = [];
-let lastId = 0;
+const wss = new ws.WebSocketServer({port: 15882});
+var cubiixList = [];
+var lastId = 0;
 
-//set up a 100 x 100 map TODO: make this adjustable
-let mapWidth = 100;
-let mapHeight = 100;
-let map = [];
-for (let i = 0; i < mapHeight; i++) {
+//load config file
+var config = JSON.parse(fs.readFileSync("config.json"));
+//TODO: validate config file
+
+//set up the map. TODO: load from file or so.
+var map = [];
+for (let i = 0; i < config.mapHeight; i++) {
 	map.push([]);
-	for (let j = 0; j < mapWidth; j++) {
+	for (let j = 0; j < config.mapWidth; j++) {
 		map[i].push(i % 2? "plankA" : "plankB");
 	}
 }
@@ -33,8 +35,8 @@ wss.on("connection", function connection(ws) {
 		
 		if(msgType == "init") {
 			let thisCubiix = {
-				posX: 50,
-				posY: 50,
+				posX: config.spawnX,
+				posY: config.spawnY,
 				walking: false,
 				socket: ws,
 				id: lastId,
@@ -62,9 +64,12 @@ wss.on("connection", function connection(ws) {
 			
 			//inform new cubiix about their id
 			ws.send("[yourId]" + thisCubiix.id);
-			
 			//send map to the new cubiix
-			ws.send("[map]" + mapWidth + "|" + mapHeight + "|" + serializeMap());
+			ws.send("[map]" + config.mapWidth + "|" + config.mapHeight + "|" + serializeMap());
+			//send movement speed to new cubiix
+			ws.send("[walkSpeed]" + config.walkSpeed);
+			
+			let lastPositionMessage = 0; //timestamp of when the last [p] update came in and the cubiix position was actually changed.
 			
 			ws.addEventListener("message", function(message) {
 				let msgType = message.data.substring(1, message.data.indexOf("]"));
@@ -72,10 +77,15 @@ wss.on("connection", function connection(ws) {
 				
 				switch(msgType) {
 				case "p":
-					//TODO: validate movement distance
+					let newX = parseFloat(args[0]);
+					let newY = parseFloat(args[1]);
+					//check if moving too far
+					if (config.enforceSpeedLimit == (Math.min(process.uptime() - lastPositionMessage, .05) * config.speedLimit >= cubiixPointDist(thisCubiix, newX, newY))) break;
+					
+					lastPositionMessage = process.uptime();
 					if (!thisCubiix.stackedOn) {
-						thisCubiix.posX = parseFloat(args[0]);
-						thisCubiix.posY = parseFloat(args[1]);
+						thisCubiix.posX = newX;
+						thisCubiix.posY = newY;
 						sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
 						sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
 					}
@@ -118,6 +128,12 @@ wss.on("connection", function connection(ws) {
 
 //utility functions
 
+
+//gets the distance between a cubiix and a point.
+function cubiixPointDist(cubiix, x, y) {
+	return Math.sqrt((cubiix.posX - x) * (cubiix.posX - x) + (cubiix.posY - y) * (cubiix.posY - y));
+}
+
 //gets the distance between two cubiix.
 function cubiixDist(cubiixA, cubiixB) {
 	return Math.sqrt((cubiixA.posX - cubiixB.posX) * (cubiixA.posX - cubiixB.posX) + (cubiixA.posY - cubiixB.posY) * (cubiixA.posY - cubiixB.posY));
@@ -155,7 +171,6 @@ function topCubiixInStack(cubiix) {
 	return cubiix;
 }
 
-
 //takes a cubiix and all other cubiix above it out of a stack. 
 function unstackCubiix(cubiix) {
 	recursiveUnstack(cubiix);
@@ -181,7 +196,7 @@ function recursiveUnstack(cubiix) {
 
 function serializeMap() {
 	let mapString = "";
-	for (let i = 0; i < mapHeight; i++) {
+	for (let i = 0; i < config.mapHeight; i++) {
 		mapString += map[i].join("|") + "|";
 	}
 	return mapString.substring(0, mapString.length - 1);

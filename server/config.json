@@ -1,0 +1,9 @@
+{
+	"mapWidth": 100,
+	"mapHeight": 100,
+	"spawnX": 1500,
+	"spawnY": 750,
+	"walkSpeed": 200,
+	"speedLimit": 101,
+	"enforceSpeedLimit": true
+}

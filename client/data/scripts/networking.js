@@ -57,6 +57,9 @@ function receiveMessage(message) {
 		case "disconnected":
 			cubiixList.splice(cubiixList.indexOf(cubiixById(args[0])), 1);
 			break;
+		case "walkSpeed":
+			walkSpeed = args[0];
+			break;
 		case "yourId":
 			playerCubiix = cubiixById(args[0]);
 			break;

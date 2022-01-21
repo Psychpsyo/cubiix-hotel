@@ -1,5 +1,5 @@
 //game related variables
-var walkSpeed = 96;
+var walkSpeed = 100;
 var playerCubiix = {}
 var cubiixList = [];
 var worldMap = [];
@@ -65,7 +65,7 @@ function renderFrame(time) {
 }
 
 function drawCubiix(cubiix, x, y, time) {
-	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 150) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 150) % 2)? 2 : 0) : 0), 32, 32);
+	ctx.drawImage(sprites.cubiix, (cubiix.walking && !cubiix.stackedOn)? Math.floor((time / 15000 * walkSpeed) % 4) * 32 : 0, 0 + bottomCubiixInStack(cubiix).facingUp * 32 + bottomCubiixInStack(cubiix).facingRight * 64, 32, 32, x - 16, y - 32 - ((cubiix.stackedOn && bottomCubiixInStack(cubiix).walking)? (Math.floor((time / 15000 * walkSpeed) % 2)? 2 : 0) : 0), 32, 32);
 	if (cubiix.nextInStack) {
 		drawCubiix(cubiix.nextInStack, x, y - 19, time);
 	} else {
