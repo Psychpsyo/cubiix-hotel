@@ -21,8 +21,8 @@ function receiveMessage(message) {
 				cubiix.facingUp = true;
 			}
 			
-			//if server puts the player outside the scroll-to area, center camera on their cubiix.
-			if (cubiix == playerCubiix && Math.abs(playerCubiix.posX - (scrollX + 200)) > 100 || Math.abs(playerCubiix.posY - (scrollY + 160)) > 60) {
+			//if server puts the player outside the scroll-to area, center camera on their cubiix. Note: borders are more lenient than on the actual scrolling to prevent accidental recentering.
+			if (cubiix == playerCubiix && Math.abs(playerCubiix.posX - (scrollX + 200)) > 120 || Math.abs(playerCubiix.posY - (scrollY + 160)) > 80) {
 				scrollX = playerCubiix.posX - 200;
 				scrollY = playerCubiix.posY - 160;
 			}
