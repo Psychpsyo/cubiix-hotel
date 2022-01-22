@@ -1,7 +1,11 @@
-.error {
+.chatError {
 	color: red;
 }
 
-.ownMessage {
+.chatNote {
 	color: grey;
+}
+
+.chatConfirm {
+	color: green;
 }

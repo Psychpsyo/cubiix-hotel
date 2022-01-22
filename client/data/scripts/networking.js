@@ -4,7 +4,7 @@ function receiveMessage(message) {
 	let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 	
 	switch(msgType) {
-		case "p":
+		case "p": {
 			let cubiix = cubiixById(args[0]);
 			let oldX = cubiix.posX;
 			let oldY = cubiix.posY;
@@ -27,10 +27,12 @@ function receiveMessage(message) {
 				scrollY = playerCubiix.posY - 160;
 			}
 			break;
-		case "walk":
+		}
+		case "walk": {
 			cubiixById(args[0]).walking = args[1] == "true";
 			break;
-		case "stack":
+		}
+		case "stack": {
 			let topCubiix = cubiixById(args[0]);
 			let bottomCubiix = cubiixById(args[1]);
 			topCubiix.stackedOn = bottomCubiix;
@@ -42,10 +44,12 @@ function receiveMessage(message) {
 				targeting = false;
 			}
 			break;
-		case "unstack":
+		}
+		case "unstack": {
 			unstackCubiix(cubiixById(args[0]));
 			break;
-		case "drop":
+		}
+		case "drop": {
 			let droppedCubiix = cubiixById(args[0]);
 			droppedCubiix.posX = bottomCubiixInStack(droppedCubiix).posX;
 			droppedCubiix.posY = bottomCubiixInStack(droppedCubiix).posY;
@@ -53,18 +57,37 @@ function receiveMessage(message) {
 			droppedCubiix.stackedOn.nextInStack = null;
 			droppedCubiix.stackedOn = null;
 			break;
-		case "chat":
+		}
+		case "chat": {
 			chatHistory.appendChild(document.createTextNode(cubiixById(args[0]).name + ": " + args.splice(1).join("|")));
 			chatHistory.appendChild(document.createElement("br"));
 			break;
-		case "error":
+		}
+		case "error": {
 			let newError = document.createElement("span");
 			newError.textContent = args.join("|");
-			newError.classList.add("error");
+			newError.classList.add("chatError");
 			chatHistory.appendChild(newError);
 			chatHistory.appendChild(document.createElement("br"));
 			break;
-		case "newCubiix":
+		}
+		case "note": {
+			let newNote = document.createElement("span");
+			newNote.textContent = args.join("|");
+			newNote.classList.add("chatNote");
+			chatHistory.appendChild(newNote);
+			chatHistory.appendChild(document.createElement("br"));
+			break;
+		}
+		case "success": {
+			let newConfirmation = document.createElement("span");
+			newConfirmation.textContent = args.join("|");
+			newConfirmation.classList.add("chatConfirm");
+			chatHistory.appendChild(newConfirmation);
+			chatHistory.appendChild(document.createElement("br"));
+			break;
+		}
+		case "newCubiix": {
 			cubiixList.push({
 				posX: parseFloat(args[0]),
 				posY: parseFloat(args[1]),
@@ -78,7 +101,8 @@ function receiveMessage(message) {
 				nameColor: args[5]
 			});
 			break;
-		case "allCubiixSent":
+		}
+		case "allCubiixSent": {
 			//resolve all the stacks from cubiix ids to actual references to cubiix.
 			cubiixList.forEach(cubiix => {
 				if (cubiix.stackedOn) {
@@ -87,33 +111,42 @@ function receiveMessage(message) {
 				}
 			});
 			break;
-		case "disconnected":
+		}
+		case "disconnected": {
 			cubiixList.splice(cubiixList.indexOf(cubiixById(args[0])), 1);
 			break;
-		case "floor":
+		}
+		case "floor": {
 			worldMap[parseInt(args[1])][parseInt(args[0])] = args[2];
 			break;
-		case "walkSpeed":
+		}
+		case "walkSpeed": {
 			walkSpeed = args[0];
 			break;
-		case "yourId":
+		}
+		case "yourId": {
 			playerCubiix = cubiixById(args[0]);
 			
 			//center camera on the cubiix.
 			scrollX = playerCubiix.posX - 200;
 			scrollY = playerCubiix.posY - 160;
 			break;
-		case "givePerms":
+		}
+		case "givePerms": {
 			yourPerms = yourPerms.concat(args);
 			break;
-		case "takePerms":
+		}
+		case "takePerms": {
 			for (permission of args) {
-				while (permission in yourPerms) {
+				console.log(permission);
+				while (yourPerms.includes(permission)) {
+					console.log(args);
 					yourPerms.splice(yourPerms.indexOf(permission), 1);
 				}
 			}
 			break;
-		case "map":
+		}
+		case "map": {
 			//initialize map
 			worldMap = [];
 			mapWidth = parseInt(args[0]);
@@ -122,6 +155,7 @@ function receiveMessage(message) {
 				worldMap.push(args.slice(2 + i * mapWidth, 2 + i * mapWidth + mapHeight));
 			}
 			break;
+		}
 	}
 }
 

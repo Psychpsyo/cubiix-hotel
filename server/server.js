@@ -58,7 +58,7 @@ wss.on("connection", function connection(ws) {
 			}
 			lastId++;
 			
-			console.log("Cubiix '" + thisCubiix.name + "+" + thisCubiix.id + "' connected.");
+			console.log("Cubiix '" + fullName(thisCubiix) + "' connected.");
 			
 			//send the new cubiix to all other ones.
 			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.nameColor + "|" + thisCubiix.name);
@@ -175,7 +175,7 @@ wss.on("connection", function connection(ws) {
 					if (config.adminPassword != "" && args[0] == config.adminPassword) {
 						thisCubiix.perms.push("admin");
 						ws.send("[givePerms]admin");
-						console.log("Cubiix '" + thisCubiix.name + "#" + thisCubiix.id + "' is now admin.");
+						console.log("Cubiix '" + fullName(thisCubiix) + "' is now admin.");
 					}
 					break;
 				case "chat":
@@ -201,7 +201,7 @@ wss.on("connection", function connection(ws) {
 				unstackCubiix(thisCubiix);
 				cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
 				sendToAll("[disconnected]" + thisCubiix.id);
-				console.log("Cubiix '" + thisCubiix.name + "#" + thisCubiix.id + "' disconnected.");
+				console.log("Cubiix '" + fullName(thisCubiix) + "' disconnected.");
 			});
 		} else {
 			ws.close();
@@ -215,16 +215,114 @@ function doChatCommand(cubiix, command) {
 		cubiix.socket.send("[error]You don't have the permission to run chat commands.");
 		return;
 	}
-	switch (command.substring(0, (command + " ").indexOf(" "))) {
-		case "respawn":
+	let commandParts = command.split(" ");
+	
+	switch (commandParts[0]) {
+		case "respawn": {
 			respawn(cubiix);
 			break;
-		default:
+		}
+		case "givePerms": {
+			if (!hasPerms(cubiix, "givePerms")) {
+				cubiix.socket.send("[error]You don't have the permission to give others permissions.");
+				break;
+			}
+			//check if there's enough parameters in the command
+			if (commandParts.length < 3) {
+				cubiix.socket.send("[error]Not enough parameters.");
+				break;
+			}
+			
+			let permission = commandParts[1];
+			//ensure that they have admin perms themselves if they want to give someone admin.
+			if (permission == "admin" && !hasPerms(cubiix, "admin")) {
+				cubiix.socket.send("[error]You must be an admin to give someone admin rights.");
+				break;
+			}
+			let target = cubiixFromFullName(commandParts.slice(2).join(" "));
+			if (!target) {
+				cubiix.socket.send("[error]'" + commandParts.slice(2).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				break;
+			}
+			
+			//check if target already has the permission in question
+			if (target.perms.includes(permission)) {
+				cubiix.socket.send("[error]" + fullName(target) + " already has " + permission + " permissions.");
+				break;
+			}
+			
+			//all checks done, give them the permission
+			target.perms.push(permission);
+			target.socket.send("[givePerms]" + permission);
+			target.socket.send("[success]You have been granted " + permission + " permissions.");
+			cubiix.socket.send("[success]Given " + permission + " permissions to " + fullName(target) + ".");
+			
+			if (permission == "admin") { //if someone got admin, announce it in the logs and, if set, the chat.
+				console.log(fullName(target) + " was given admin permissions by " + fullName(cubiix) + ".");
+				if (config.announceAdminPerms) {
+					sendToAll("[note]" + fullName(target) + " has been granted admin permissions.", target);
+				}
+			}
+			break;
+		}
+		case "takePerms": {
+			if (!hasPerms(cubiix, "takePerms")) {
+				cubiix.socket.send("[error]You don't have the permission to take permissions from others.");
+				break;
+			}
+			//check if there's enough parameters in the command
+			if (commandParts.length < 3) {
+				cubiix.socket.send("[error]Not enough parameters.");
+				break;
+			}
+			
+			let permission = commandParts[1];
+			//ensure that they have admin perms themselves if they want to take admin from someone.
+			if (permission == "admin" && !hasPerms(cubiix, "admin")) {
+				cubiix.socket.send("[error]You must be an admin to give someone admin rights.");
+				break;
+			}
+			
+			let target = cubiixFromFullName(commandParts.slice(2).join(" "));
+			if (!target) {
+				cubiix.socket.send("[error]'" + commandParts.slice(2).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				break;
+			}
+			
+			//check if target even has the permission in question
+			if (!target.perms.includes(permission)) {
+				cubiix.socket.send("[error]" + fullName(target) + " does not have " + permission + " permissions.");
+				break;
+			}
+			
+			//all checks done, take their permission away
+			while (target.perms.includes(permission)) {
+				target.perms.splice(target.perms.indexOf(permission), 1);
+			}
+			target.socket.send("[takePerms]" + permission);
+			target.socket.send("[error]Your " + permission + " permissions have been revoked.");
+			cubiix.socket.send("[success]Taken " + permission + " permissions from " + fullName(target) + ".");
+			
+			if (permission == "admin") { //if someone got admin taken away, announce it in the logs and, if set, the chat.
+				console.log(fullName(cubiix) + " took admin permissions away from " + fullName(target) + ".");
+				if (config.announceAdminPerms) {
+					sendToAll("[note]" + fullName(target) + " has had their admin permissions revoked.", target);
+				}
+			}
+			break;
+		}
+		default: {
 			cubiix.socket.send("[error]Command does not exist.");
+		}
 	}
 }
 
 //utility functions
+
+//create a cubiix's full name
+function fullName(cubiix) {
+	return cubiix.name + "#" + cubiix.id;
+}
 
 //put cubiix at spawn point
 function respawn(cubiix, initialSpawn = false) {
@@ -308,6 +406,16 @@ function recursiveUnstack(cubiix) {
 	if (cubiix.nextInStack) {
 		recursiveUnstack(cubiix.nextInStack);
 	}
+}
+
+//finds a cubiix by its fully specified name. (name#id)
+function cubiixFromFullName(input) {
+	for (cubiix of cubiixList) {
+		if (cubiix.name + "#" + cubiix.id == input) {
+			return cubiix;
+		}
+	}
+	return null;
 }
 
 function serializeMap() {

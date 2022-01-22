@@ -12,5 +12,6 @@
 	"walkSpeed": 100,
 	"defaultPermSet": ["move", "stack", "unstack", "chat", "commands"],
 	"adminPassword": "",
-	"generateAdminPassword": true
+	"generateAdminPassword": true,
+	"announceAdminPerms": true
 }
