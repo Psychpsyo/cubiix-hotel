@@ -185,7 +185,7 @@ wss.on("connection", function connection(ws) {
 						break;
 					}
 					
-					if (!hasPerms(cubiix, "chat")) {
+					if (!hasPerms(thisCubiix, "chat")) {
 						ws.send("[error]You don't have the permission to send chat messages.");
 						break;
 					}

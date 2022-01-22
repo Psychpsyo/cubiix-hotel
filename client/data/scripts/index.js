@@ -239,6 +239,11 @@ mainCanvas.addEventListener("mousemove", function(e) {
 chatInput.addEventListener("keypress", function(e) {
 	if (e.code == "Enter"){
 		socket.send("[chat]" + this.value);
+		
+		if (this.value == "/respawn") {
+			targeting = false;
+		}
+		
 		chatHistory.appendChild(document.createTextNode(playerCubiix.name + ": " + this.value));
 		chatHistory.appendChild(document.createElement("br"));
 		this.value = "";
