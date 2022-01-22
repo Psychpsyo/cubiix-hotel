@@ -240,7 +240,7 @@ chatInput.addEventListener("keypress", function(e) {
 	if (e.code == "Enter"){
 		socket.send("[chat]" + this.value);
 		
-		if (this.value == "/respawn") {
+		if (this.value == "/respawn" || this.value.startsWith("/tp")) {
 			targeting = false;
 		}
 		

@@ -9,6 +9,13 @@
 			"sizeY": 150
 		}
 	],
+	"tpLocations": [
+		{
+			"name": "spawn",
+			"x": 1500,
+			"y": 375
+		}
+	],
 	"userLimit": -1,
 	"walkSpeed": 100,
 	"defaultPermSet": ["move", "stack", "unstack", "chat", "commands"],

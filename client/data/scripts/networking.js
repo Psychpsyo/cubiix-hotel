@@ -201,6 +201,7 @@ function disconnect() {
 	connected = false;
 	gameArea.style.display = "none";
 	initialScreen.style.display = "block";
+	chatHistory.innerHTML = "";
 }
 
 connectButton.addEventListener("click", function() {

@@ -64,7 +64,7 @@ wss.on("connection", function connection(ws) {
 				id: lastId,
 				nextInStack: null,
 				stackedOn: null,
-				name: args.splice(1).join("|"),
+				name: args.splice(1).join("|").trim(),
 				nameColor: args[0],
 				perms: config.defaultPermSet.slice()
 			};
@@ -76,18 +76,17 @@ wss.on("connection", function connection(ws) {
 			}
 			lastId++;
 			
-			
-			//announce join
-			if (config.announceJoinLeave) {
-				sendToAll("[note]" + fullName(thisCubiix) + " has connected.");
-			}
-			console.log("Cubiix '" + fullName(thisCubiix) + "' connected.");
-			
 			//send the new cubiix to all other ones.
 			sendToAll("[newCubiix]" + thisCubiix.posX + "|" + thisCubiix.posY + "|" + thisCubiix.walking + "|" + thisCubiix.id + "||" + thisCubiix.nameColor + "|" + thisCubiix.name);
 			
 			//add new cubiix to the server-side list
 			cubiixList.push(thisCubiix);
+			
+			//announce join after the cubiix has been added to the list of cubiix so that, if a same named cubiix is already on the server, the new one will show with ther #id in the join messages.
+			if (config.announceJoinLeave) {
+				sendToAll("[note]" + fullName(thisCubiix) + " has connected.", thisCubiix);
+			}
+			console.log("Cubiix '" + fullName(thisCubiix) + "' connected.");
 			
 			//send all cubiix to the new one and then tell it that all of them came through
 			cubiixList.forEach(function(cubiix) {
@@ -343,6 +342,11 @@ function doChatCommand(cubiix, command) {
 				break;
 			}
 			
+			if (commandParts.length < 2) {
+				cubiix.socket.send("[error]Not enough parameters.");
+				break;
+			}
+			
 			let target = cubiixFromId(commandParts[1]);
 			if (!target) {
 				cubiix.socket.send("[error]'" + commandParts[1] + "' did not match any Cubiix in the session.");
@@ -350,7 +354,7 @@ function doChatCommand(cubiix, command) {
 			}
 			
 			//terminate their connection
-			target.socket.send("[kick]You have been kicked from the server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : ""));
+			target.socket.send("[kick]You have been kicked from the server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : "\nNo reason was provided as to why."));
 			target.socket.close();
 			sendToAll("[note]" + fullName(target) + " has been kicked from the server.", target);
 			break;
@@ -361,17 +365,84 @@ function doChatCommand(cubiix, command) {
 				break;
 			}
 			
+			if (commandParts.length < 2) {
+				cubiix.socket.send("[error]Not enough parameters.");
+				break;
+			}
+			
 			let target = cubiixFromId(commandParts[1]);
 			if (!target) {
-				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session.");
+				cubiix.socket.send("[error]'" + commandParts[1] + "' did not match any Cubiix in the session.");
 				break;
 			}
 			
 			//ban their IP and disconnect them.
 			config.bannedIPs.push(target.socket._socket.remoteAddress);
-			target.socket.send("[kick]You have been banned from this server.");
+			target.socket.send("[kick]You have been banned from this server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : "\nNo reason was provided as to why."));
 			target.socket.close();
-			sendToAll("[error]" + fullName(target) + " has been banned from the server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : ""), target);
+			sendToAll("[error]" + fullName(target) + " has been banned from the server.", target);
+			break;
+		}
+		case "tp": {
+			if (!hasPerms(cubiix, "teleport")) {
+				cubiix.socket.send("[error]You don't have the permission to teleport.");
+				break;
+			}
+			
+			if (commandParts.length < 2) {
+				cubiix.socket.send("[error]Not enough parameters.");
+				break;
+			}
+			
+			let targetX = NaN;
+			let targetY = NaN;
+			if (commandParts[1][0] == "#") { //teleporting to a cubiix
+				targetCubiix = cubiixFromId(commandParts[1]);
+				if (!targetCubiix) {
+					cubiix.socket.send("[error]'" + commandParts[1] + "' did not match any Cubiix in the session.");
+					break;
+				}
+				
+				targetX = targetCubiix.posX;
+				targetY = targetCubiix.posY;
+				cubiix.socket.send("[note]Teleported to " + fullName(targetCubiix) + ".");
+			} else { //teleporting to location or coordinates
+				targetX = parseFloat(commandParts[1]); //parse X here already to check if it may be a location
+				//location
+				if (isNaN(targetX)) {
+					targetLocation = config.tpLocations.find(tpLocation => {
+						return tpLocation.name == commandParts[1];
+					});
+					if (!targetLocation) {
+						cubiix.socket.send("[error]" + commandParts[1] + " is not a location.");
+						break;
+					}
+					
+					targetX = targetLocation.x;
+					targetY = targetLocation.y;
+					cubiix.socket.send("[note]Teleported to " + targetLocation.name + ".");
+				} else {
+					//coordinates
+					if (commandParts.length < 3) {
+						cubiix.socket.send("[error]Not enough parameters.");
+						break;
+					}
+					
+					targetY = parseFloat(commandParts[2]); //only parse Y since X already got parsed.
+					
+					if (isNaN(targetX) || isNaN(targetY)) {
+						cubiix.socket.send("[error]You must specify X and Y coordinates as numbers.");
+						break;
+					}
+					cubiix.socket.send("[note]Teleported to " + targetX + ", " + targetY + ".");
+				}
+				
+				
+			}
+			
+			cubiix.posX = targetX;
+			cubiix.posY = targetY;
+			sendToAll("[p]" + cubiix.id + "|" + targetX + "|" + targetY);
 			break;
 		}
 		default: {
@@ -384,7 +455,11 @@ function doChatCommand(cubiix, command) {
 
 //create a cubiix's full name
 function fullName(cubiix) {
-	return cubiix.name + "#" + cubiix.id;
+	sameNamedCubiix = cubiixList.filter(cbx => {
+		return cbx.name == cubiix.name;
+	});
+	
+	return cubiix.name + (sameNamedCubiix.length > 1? "#" + cubiix.id : "");
 }
 
 //put cubiix at spawn point
