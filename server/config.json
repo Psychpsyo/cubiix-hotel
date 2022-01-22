@@ -9,9 +9,12 @@
 			"sizeY": 150
 		}
 	],
+	"userLimit": -1,
 	"walkSpeed": 100,
 	"defaultPermSet": ["move", "stack", "unstack", "chat", "commands"],
 	"adminPassword": "",
 	"generateAdminPassword": true,
-	"announceAdminPerms": true
+	"announceJoinLeave": true,
+	"announceAdminPerms": true,
+	"bannedIPs": []
 }

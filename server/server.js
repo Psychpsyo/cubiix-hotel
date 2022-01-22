@@ -38,6 +38,19 @@ wss.on("connection", function connection(ws) {
 		let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 		
 		if(msgType == "init") {
+			//check if the user is IP banned
+			if (config.bannedIPs.includes(ws._socket.remoteAddress)) {
+				ws.send("[kick]You are banned from this server.");
+				ws.close();
+				return;
+			}
+			//check user limit
+			if (cubiixList.length >= config.userLimit && config.userLimit >= 0) {
+				ws.send("[kick]This server has reached its user limit.");
+				ws.close();
+				return;
+			}
+			
 			let thisCubiix = {
 				posX: 0,
 				posY: 0,
@@ -58,6 +71,11 @@ wss.on("connection", function connection(ws) {
 			}
 			lastId++;
 			
+			
+			//announce join
+			if (config.announceJoinLeave) {
+				sendToAll("[note]" + fullName(thisCubiix) + " has connected.");
+			}
 			console.log("Cubiix '" + fullName(thisCubiix) + "' connected.");
 			
 			//send the new cubiix to all other ones.
@@ -196,11 +214,14 @@ wss.on("connection", function connection(ws) {
 				}
 			});
 			
-			ws.addEventListener("close", function() {
-				//unstack the cubiix from its current stack, then remove it from the world
+			ws.addEventListener("close", function(e) {
 				unstackCubiix(thisCubiix);
 				cubiixList.splice(cubiixList.indexOf(thisCubiix), 1);
 				sendToAll("[disconnected]" + thisCubiix.id);
+				
+				if (config.announceJoinLeave && e.code == 1001) {
+					sendToAll("[note]" + fullName(thisCubiix) + " has disconnected.");
+				}
 				console.log("Cubiix '" + fullName(thisCubiix) + "' disconnected.");
 			});
 		} else {
@@ -309,6 +330,43 @@ function doChatCommand(cubiix, command) {
 					sendToAll("[note]" + fullName(target) + " has had their admin permissions revoked.", target);
 				}
 			}
+			break;
+		}
+		case "kick": {
+			if (!hasPerms(cubiix, "kick")) {
+				cubiix.socket.send("[error]You don't have the permission to kick people.");
+				break;
+			}
+			
+			let target = cubiixFromFullName(commandParts.slice(1).join(" "));
+			if (!target) {
+				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				break;
+			}
+			
+			//terminate their connection
+			target.socket.send("[kick]You have been kicked from the server.");
+			target.socket.close();
+			sendToAll("[note]" + fullName(target) + " has been kicked from the server.", target);
+			break;
+		}
+		case "ban": {
+			if (!hasPerms(cubiix, "ban")) {
+				cubiix.socket.send("[error]You don't have the permission to ban people.");
+				break;
+			}
+			
+			let target = cubiixFromFullName(commandParts.slice(1).join(" "));
+			if (!target) {
+				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				break;
+			}
+			
+			//ban their IP and disconnect them.
+			config.bannedIPs.push(target.socket._socket.remoteAddress);
+			target.socket.send("[kick]You have been banned from this server.");
+			target.socket.close();
+			sendToAll("[error]" + fullName(target) + " has been banned from the server.", target);
 			break;
 		}
 		default: {

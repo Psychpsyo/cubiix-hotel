@@ -156,6 +156,11 @@ function receiveMessage(message) {
 			}
 			break;
 		}
+		case "kick": {
+			disconnect();
+			alert(args[0]);
+			break;
+		}
 	}
 }
 
@@ -183,6 +188,15 @@ function connectToServer(address) {
 			socket.send("[requestAdmin]" + adminPasswordInput.value);
 		}
 	});
+	
+	socket.addEventListener("close", disconnect);
+}
+
+function disconnect() {
+	socket.close();
+	connected = false;
+	gameArea.style.display = "none";
+	initialScreen.style.display = "block";
 }
 
 connectButton.addEventListener("click", function() {
