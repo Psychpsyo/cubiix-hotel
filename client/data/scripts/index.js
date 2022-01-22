@@ -248,7 +248,7 @@ chatInput.addEventListener("keypress", function(e) {
 		chatHistory.appendChild(document.createElement("br"));
 		this.value = "";
 	}
-})
+});
 
 //resizing the canvas
 function resizeGame() {

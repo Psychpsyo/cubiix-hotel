@@ -35,6 +35,7 @@ function receiveMessage(message) {
 			let bottomCubiix = cubiixById(args[1]);
 			topCubiix.stackedOn = bottomCubiix;
 			bottomCubiix.nextInStack = topCubiix;
+			topCubiix.walking = false;
 			
 			//stop walking to a target when stacking
 			if (topCubiix === playerCubiix && !mouseHolding) {

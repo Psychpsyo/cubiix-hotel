@@ -228,6 +228,9 @@ function doChatCommand(cubiix, command) {
 
 //put cubiix at spawn point
 function respawn(cubiix, initialSpawn = false) {
+	if (!initialSpawn) {
+		unstackCubiix(cubiix);
+	}
 	let chosenSpawn = config.spawnPoints[Math.floor(Math.random() * config.spawnPoints.length)];
 	cubiix.posX = chosenSpawn.x + Math.random() * chosenSpawn.sizeX - chosenSpawn.sizeX / 2;
 	cubiix.posY = chosenSpawn.y + Math.random() * chosenSpawn.sizeY - chosenSpawn.sizeY / 2;
@@ -303,7 +306,7 @@ function recursiveUnstack(cubiix) {
 	
 	//unstack the next one above it.
 	if (cubiix.nextInStack) {
-		unstackCubiix(cubiix.nextInStack);
+		recursiveUnstack(cubiix.nextInStack);
 	}
 }
 
