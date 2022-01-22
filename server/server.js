@@ -48,7 +48,7 @@ wss.on("connection", function connection(ws) {
 				stackedOn: null,
 				name: args.splice(1).join("|"),
 				nameColor: args[0],
-				perms: config.defaultPermSet
+				perms: config.defaultPermSet.slice()
 			};
 			respawn(thisCubiix, true);
 			
