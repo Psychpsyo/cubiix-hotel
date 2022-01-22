@@ -38,6 +38,11 @@ wss.on("connection", function connection(ws) {
 		let args = message.data.substring(message.data.indexOf("]") + 1).split("|");
 		
 		if(msgType == "init") {
+			//check if init is valid
+			if (args.length < 2 || args.slice(1).join("|") == "") {
+				ws.send("[kick]Error while joining the server.");
+				ws.close();
+			}
 			//check if the user is IP banned
 			if (config.bannedIPs.includes(ws._socket.remoteAddress)) {
 				ws.send("[kick]You are banned from this server.");
@@ -260,9 +265,9 @@ function doChatCommand(cubiix, command) {
 				cubiix.socket.send("[error]You must be an admin to give someone admin rights.");
 				break;
 			}
-			let target = cubiixFromFullName(commandParts.slice(2).join(" "));
+			let target = cubiixFromId(commandParts[2]);
 			if (!target) {
-				cubiix.socket.send("[error]'" + commandParts.slice(2).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				cubiix.socket.send("[error]'" + commandParts[2] + "' did not match any Cubiix in the session.");
 				break;
 			}
 			
@@ -304,9 +309,9 @@ function doChatCommand(cubiix, command) {
 				break;
 			}
 			
-			let target = cubiixFromFullName(commandParts.slice(2).join(" "));
+			let target = cubiixFromId(commandParts[2]);
 			if (!target) {
-				cubiix.socket.send("[error]'" + commandParts.slice(2).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				cubiix.socket.send("[error]'" + commandParts[2] + "' did not match any Cubiix in the session.");
 				break;
 			}
 			
@@ -338,14 +343,14 @@ function doChatCommand(cubiix, command) {
 				break;
 			}
 			
-			let target = cubiixFromFullName(commandParts.slice(1).join(" "));
+			let target = cubiixFromId(commandParts[1]);
 			if (!target) {
-				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				cubiix.socket.send("[error]'" + commandParts[1] + "' did not match any Cubiix in the session.");
 				break;
 			}
 			
 			//terminate their connection
-			target.socket.send("[kick]You have been kicked from the server.");
+			target.socket.send("[kick]You have been kicked from the server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : ""));
 			target.socket.close();
 			sendToAll("[note]" + fullName(target) + " has been kicked from the server.", target);
 			break;
@@ -356,9 +361,9 @@ function doChatCommand(cubiix, command) {
 				break;
 			}
 			
-			let target = cubiixFromFullName(commandParts.slice(1).join(" "));
+			let target = cubiixFromId(commandParts[1]);
 			if (!target) {
-				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session. Make sure that you spelled their name correctly and included their #id at the end. (You can find those in the user list with [LCTRL].)");
+				cubiix.socket.send("[error]'" + commandParts.slice(1).join(" ") + "' did not match any Cubiix in the session.");
 				break;
 			}
 			
@@ -366,7 +371,7 @@ function doChatCommand(cubiix, command) {
 			config.bannedIPs.push(target.socket._socket.remoteAddress);
 			target.socket.send("[kick]You have been banned from this server.");
 			target.socket.close();
-			sendToAll("[error]" + fullName(target) + " has been banned from the server.", target);
+			sendToAll("[error]" + fullName(target) + " has been banned from the server." + (commandParts.length > 2? "\nReason: " + commandParts.slice(2).join(" ") : ""), target);
 			break;
 		}
 		default: {
@@ -467,13 +472,10 @@ function recursiveUnstack(cubiix) {
 }
 
 //finds a cubiix by its fully specified name. (name#id)
-function cubiixFromFullName(input) {
-	for (cubiix of cubiixList) {
-		if (cubiix.name + "#" + cubiix.id == input) {
-			return cubiix;
-		}
-	}
-	return null;
+function cubiixFromId(id) {
+	return cubiixList.find(cubiix => {
+		return "#" + cubiix.id == id;
+	});
 }
 
 function serializeMap() {

@@ -165,6 +165,10 @@ function receiveMessage(message) {
 }
 
 function connectToServer(address) {
+	if (usernameInput.value == "") {
+		alert("You must name yourself before joining a server.");
+	}
+	
 	if (socket) {
 		socket.close();
 		//reset data
