@@ -162,7 +162,7 @@ function doWalking() {
 
 //controls
 document.addEventListener("keydown", function(e) {
-	if (!connected) return;
+	if (!connected || document.activeElement != document.body) return;
 	
 	switch(e.code) {
 		case "ArrowLeft":
@@ -187,7 +187,7 @@ document.addEventListener("keydown", function(e) {
 	}
 });
 document.addEventListener("keyup", function(e) {
-	if (!connected) return;
+	if (!connected || document.activeElement != document.body) return;
 	
 	switch(e.code) {
 		case "ArrowLeft":
