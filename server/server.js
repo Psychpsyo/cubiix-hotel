@@ -82,6 +82,11 @@ wss.on("connection", function connection(ws) {
 			//add new cubiix to the server-side list
 			cubiixList.push(thisCubiix);
 			
+			//welcome the new cubiix
+			if (config.joinMessage != "") {
+				ws.send("[note]" + config.joinMessage.replace("{player}", thisCubiix.name));
+			}
+			
 			//announce join after the cubiix has been added to the list of cubiix so that, if a same named cubiix is already on the server, the new one will show with ther #id in the join messages.
 			if (config.announceJoinLeave) {
 				sendToAll("[note]" + fullName(thisCubiix) + " has connected.", thisCubiix);

@@ -1,4 +1,5 @@
 {
+	"joinMessage": "Welcome to the server, {player}!",
 	"mapWidth": 100,
 	"mapHeight": 100,
 	"spawnPoints": [
