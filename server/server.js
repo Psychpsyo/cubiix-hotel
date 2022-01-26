@@ -141,8 +141,7 @@ wss.on("connection", function connection(ws) {
 					
 					lastPositionMessage = process.uptime();
 					if (!thisCubiix.stackedOn) {
-						thisCubiix.posX = newX;
-						thisCubiix.posY = newY;
+						setCubiixPos(thisCubiix, newX, newY);
 						sendToAll("[p]" + thisCubiix.id + "|" + thisCubiix.posX + "|" + thisCubiix.posY, thisCubiix);
 						sendToAll("[walk]" + thisCubiix.id + "|true", thisCubiix);
 					}
@@ -169,6 +168,7 @@ wss.on("connection", function connection(ws) {
 						thisCubiix.stackedOn = other;
 						other.nextInStack = thisCubiix;
 						sendToAll("[stack]" + thisCubiix.id + "|" + other.id);
+						setCubiixPos(thisCubiix, other.posX, other.posY);
 					}
 					break;
 				case "unstack":
@@ -191,9 +191,8 @@ wss.on("connection", function connection(ws) {
 					if (!hasPerms(thisCubiix, "drop")) break;
 					if (thisCubiix.nextInStack) {
 						sendToAll("[drop]" + thisCubiix.nextInStack.id);
-						thisCubiix.nextInStack.posX = bottomCubiixInStack(thisCubiix).posX;
-						thisCubiix.nextInStack.posY = bottomCubiixInStack(thisCubiix).posY;
 						
+						//no unstacking; dropping just pops off the entire rest of the stack.
 						thisCubiix.nextInStack.stackedOn = null;
 						thisCubiix.nextInStack = null;
 					}
@@ -410,6 +409,15 @@ function doChatCommand(cubiix, command) {
 				
 				targetX = targetCubiix.posX;
 				targetY = targetCubiix.posY;
+				
+				//stack on to the other cubiix if you have sufficient perms
+				if (hasPerms(cubiix, "stack") && hasPerms(cubiix, "unstack")) {
+					let other = topCubiixInStack(targetCubiix);
+					cubiix.stackedOn = other;
+					other.nextInStack = cubiix;
+					sendToAll("[stack]" + cubiix.id + "|" + other.id);
+				}
+				
 				cubiix.socket.send("[note]Teleported to " + fullName(targetCubiix) + ".");
 			} else { //teleporting to location or coordinates
 				targetX = parseFloat(commandParts[1]); //parse X here already to check if it may be a location
@@ -535,11 +543,7 @@ function unstackCubiix(cubiix) {
 }
 
 function recursiveUnstack(cubiix) {
-	//move cubiix to where the bottom most stack member is.
-	cubiix.posX = bottomCubiixInStack(cubiix).posX;
-	cubiix.posY = bottomCubiixInStack(cubiix).posY;
-	
-	//remove it from the one below itself.
+	//remove cubiix from the one below itself.
 	if (cubiix.stackedOn) {
 		cubiix.stackedOn.nextInStack = null;
 		cubiix.stackedOn = null;
@@ -558,6 +562,16 @@ function cubiixFromId(id) {
 	});
 }
 
+//sets a cubiix's position and the position of all other cubiix stacked on top of it.
+function setCubiixPos(cubiix, x, y) {
+	cubiix.posX = x;
+	cubiix.posY = y;
+	if (cubiix.nextInStack) {
+		setCubiixPos(cubiix.nextInStack, x, y);
+	}
+}
+
+//serializes the map into a string
 function serializeMap() {
 	let mapString = "";
 	for (let i = 0; i < config.mapHeight; i++) {
