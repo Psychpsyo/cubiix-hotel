@@ -1,3 +1,5 @@
+//this entire file has turned into a mess, that switch statement down there needs to be split into multiple functions.
+
 const utility = require("./utility.js");
 const config = require("./config.js");
 
